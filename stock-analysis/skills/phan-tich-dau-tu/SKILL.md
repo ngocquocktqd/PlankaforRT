@@ -27,7 +27,9 @@ Trả lời thẳng, không né:
 1. Tính 5 năm: doanh thu, LNST, **owner earnings** (LNST + khấu hao − capex duy trì), ROE, ROIC, biên gộp, nợ ròng/EBITDA.
 2. Chất lượng lợi nhuận: dòng tiền HĐKD / LNST (phải ≳ 0.8 trung bình 5 năm; thấp hơn → cảnh báo đỏ).
 3. DCF 2 kịch bản (thận trọng + cơ sở) bằng `fin_calc.py dcf`, chiết khấu 10–12% với VN, 8–10% với thị trường phát triển, tăng trưởng terminal ≤ 3%.
-4. **Biên an toàn**: chỉ coi là MUA khi giá ≤ 70% giá trị nội tại kịch bản thận trọng.
+4. **Vùng giá 2 tầng** (bắt buộc ghi cả hai):
+   - *Vùng tích luỹ* — chiết khấu ≥10–15% so với trung điểm nội tại (hoặc P/E, P/B dưới trung vị lịch sử 10 năm của chính nó): giá hợp lý cho doanh nghiệp chất lượng cao, xuất hiện vài lần mỗi năm. Munger: "doanh nghiệp tuyệt vời ở giá hợp lý thắng doanh nghiệp hợp lý ở giá tuyệt vời".
+   - *Vùng mua hời* — MOS ≥30% so với kịch bản thận trọng: chỉ xuất hiện vài lần mỗi thập kỷ (khủng hoảng, hoảng loạn chu kỳ), là mức "all-in có kỷ luật" chứ không phải điều kiện tối thiểu để mua.
 5. **Chấm điểm tài chính & định giá: ★1–5.**
 
 ### Bước 3 — Lăng kính Munger: Đảo ngược & thiên kiến
@@ -45,11 +47,12 @@ Trả lời thẳng, không né:
 
 ### Bước 5 — Kết luận (BẮT BUỘC nhị phân)
 ```
-## KẾT LUẬN: [MUA / THEO DÕI / TRÁNH]
+## KẾT LUẬN: [MUA / TÍCH LUỸ / THEO DÕI / TRÁNH]
 - Điểm tổng hợp: X/20 ★
 - Giá trị nội tại (thận trọng – cơ sở): [X – Y]
-- Vùng giá mua có biên an toàn: ≤ [Z]
+- Vùng tích luỹ (giá hợp lý): ≤ [Z1] | Vùng mua hời (hiếm): ≤ [Z2]
 - Giá hiện tại: [P] → premium/chiết khấu: [%]
+- Gợi ý thời điểm: chạy /phan-tich-ky-thuat để xác định điểm vào nếu kết luận là MUA/TÍCH LUỸ
 - 3 điều kiện vô hiệu hoá luận điểm (nếu xảy ra thì bán):
   1. …  2. …  3. …
 - Độ tin cậy dữ liệu: [A/B/C] cho từng nhóm số liệu
