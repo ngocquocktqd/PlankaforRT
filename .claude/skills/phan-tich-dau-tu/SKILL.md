@@ -27,9 +27,10 @@ Trả lời thẳng, không né:
 1. Tính 5 năm: doanh thu, LNST, **owner earnings** (LNST + khấu hao − capex duy trì), ROE, ROIC, biên gộp, nợ ròng/EBITDA.
 2. Chất lượng lợi nhuận: dòng tiền HĐKD / LNST (phải ≳ 0.8 trung bình 5 năm; thấp hơn → cảnh báo đỏ).
 3. DCF 2 kịch bản (thận trọng + cơ sở) bằng `fin_calc.py dcf`, chiết khấu 10–12% với VN, 8–10% với thị trường phát triển, tăng trưởng terminal ≤ 3%.
-4. **Vùng giá 2 tầng** (bắt buộc ghi cả hai):
-   - *Vùng tích luỹ* — chiết khấu ≥10–15% so với trung điểm nội tại (hoặc P/E, P/B dưới trung vị lịch sử 10 năm của chính nó): giá hợp lý cho doanh nghiệp chất lượng cao, xuất hiện vài lần mỗi năm. Munger: "doanh nghiệp tuyệt vời ở giá hợp lý thắng doanh nghiệp hợp lý ở giá tuyệt vời".
-   - *Vùng mua hời* — MOS ≥30% so với kịch bản thận trọng: chỉ xuất hiện vài lần mỗi thập kỷ (khủng hoảng, hoảng loạn chu kỳ), là mức "all-in có kỷ luật" chứ không phải điều kiện tối thiểu để mua.
+4. **Giải ngân 3 tầng** (bắt buộc ghi đủ ba — đầu tư thực tế là bài toán LIỀU LƯỢNG, không phải nhị phân mua/không mua):
+   - *Tầng 1 — Fair value* (giá ≤ trung điểm nội tại): mở **25–30% vị thế mục tiêu**. CHỈ áp dụng cho doanh nghiệp hạng A (mô hình ★4+ và Munger ★3+); doanh nghiệp thường bỏ tầng này, chỉ mua từ tầng 2. Đây là cách có chân trong doanh nghiệp tốt mà không chờ hoảng loạn vĩnh viễn.
+   - *Tầng 2 — Vùng tích luỹ* (chiết khấu ≥10–15% so trung điểm, hoặc P/E, P/B dưới trung vị lịch sử 10 năm của chính nó): nâng lên **60–70%**. Xuất hiện vài lần mỗi năm. Munger: "doanh nghiệp tuyệt vời ở giá hợp lý thắng doanh nghiệp hợp lý ở giá tuyệt vời".
+   - *Tầng 3 — Vùng mua hời* (MOS ≥30% so kịch bản thận trọng): đủ **100%**, cân nhắc vượt tỷ trọng. Chỉ xuất hiện vài lần mỗi thập kỷ (khủng hoảng, hoảng loạn chu kỳ) — phần đạn lớn nhất để dành cho lúc này.
 5. **Chấm điểm tài chính & định giá: ★1–5.**
 
 ### Bước 3 — Lăng kính Munger: Đảo ngược & thiên kiến
@@ -50,9 +51,9 @@ Trả lời thẳng, không né:
 ## KẾT LUẬN: [MUA / TÍCH LUỸ / THEO DÕI / TRÁNH]
 - Điểm tổng hợp: X/20 ★
 - Giá trị nội tại (thận trọng – cơ sở): [X – Y]
-- Vùng tích luỹ (giá hợp lý): ≤ [Z1] | Vùng mua hời (hiếm): ≤ [Z2]
-- Giá hiện tại: [P] → premium/chiết khấu: [%]
-- Gợi ý thời điểm: chạy /phan-tich-ky-thuat để xác định điểm vào nếu kết luận là MUA/TÍCH LUỸ
+- Kế hoạch giải ngân 3 tầng: Tầng 1 fair value ≤ [Z0] mở 25–30% (chỉ nếu hạng A) | Tầng 2 tích luỹ ≤ [Z1] nâng 60–70% | Tầng 3 mua hời ≤ [Z2] đủ 100%
+- Giá hiện tại: [P] → premium/chiết khấu: [%] → đang ở tầng nào / chưa tới tầng nào
+- Gợi ý thời điểm: chạy /phan-tich-ky-thuat để xác định điểm vào nếu kết luận là MUA/TÍCH LUỸ; /phan-bo-von để tính tỷ trọng tối đa trong danh mục
 - 3 điều kiện vô hiệu hoá luận điểm (nếu xảy ra thì bán):
   1. …  2. …  3. …
 - Độ tin cậy dữ liệu: [A/B/C] cho từng nhóm số liệu

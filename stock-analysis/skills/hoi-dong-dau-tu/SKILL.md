@@ -1,6 +1,6 @@
 ---
 name: hoi-dong-dau-tu
-description: Hội đồng đầu tư 5 agent đối kháng — triển khai song song 5 subagent độc lập (Đoàn Vĩnh Bình, Buffett, Munger, Lý Lục về CƠ BẢN + Minervini về KỸ THUẬT), mỗi agent tự nghiên cứu và chấm điểm riêng. Trưởng nhóm đọc thành 2 khối (không cộng gộp), tuyên bố chế độ đầu tư giá trị hay trader momentum, rồi ra quyết định theo ma trận cơ bản × kỹ thuật. Dùng cho quyết định quan trọng cần nhiều góc nhìn, ví dụ "/hoi-dong-dau-tu HPG".
+description: Hội đồng đầu tư 5 agent đối kháng — triển khai song song 5 subagent độc lập (Đoàn Vĩnh Bình, Buffett, Munger, Lý Lục về CƠ BẢN + Minervini về KỸ THUẬT), mỗi agent tự nghiên cứu và chấm điểm riêng. Trưởng nhóm đọc thành 2 khối (không cộng gộp), tuyên bố chế độ (đầu tư giá trị / GARP / trader momentum), ra quyết định theo ma trận cơ bản × kỹ thuật kèm kế hoạch giải ngân 3 tầng. Dùng cho quyết định quan trọng cần nhiều góc nhìn, ví dụ "/hoi-dong-dau-tu HPG".
 ---
 
 # Hội đồng đầu tư — 5 agent đối kháng
@@ -57,11 +57,20 @@ Dùng Agent tool, khởi chạy **cùng lúc** 5 subagent. Mỗi agent nhận pr
 - Đặc biệt chú ý mâu thuẫn CƠ BẢN vs KỸ THUẬT (định giá rẻ nhưng Stage 4, hay đắt nhưng Stage 2 mạnh) — đây là thông tin, không phải lỗi
 
 ## TUYÊN BỐ CHẾ ĐỘ (Trưởng nhóm chọn 1 trước khi kết luận)
-Cơ bản và kỹ thuật là hai trò chơi khác nhau (khác chu kỳ nắm giữ, khác quy tắc
-bán, khác cắt lỗ). Không trộn — chọn chế độ cho vị thế này:
+Mỗi chế độ là một trò chơi riêng (khác chu kỳ nắm giữ, khác quy tắc bán, khác
+cắt lỗ). Không trộn — chọn chế độ cho vị thế này:
 - **Chế độ ĐẦU TƯ GIÁ TRỊ**: cơ bản quyết định tất cả, chỉ mua DƯỚI giá trị nội
   tại; kỹ thuật chỉ để định thời điểm bên trong vùng tích luỹ (tránh bắt dao rơi).
-  Cắt lỗ theo luận điểm, giữ nhiều năm.
+  Cắt lỗ theo luận điểm, giữ nhiều năm. Ưu điểm: biên an toàn dày nhất. Nhược điểm
+  thật: cơ hội giải ngân hiếm — chấp nhận ôm tiền mặt chờ hoảng loạn.
+- **Chế độ GARP (tăng trưởng ở giá hợp lý)**: dành cho doanh nghiệp tăng trưởng
+  lợi nhuận LÕI ≥15–20%/năm và còn dư địa 2–3 năm. Điều kiện vào: PEG ≲ 1,5 và
+  P/E không vượt quá xa trung vị lịch sử chính nó; KHÔNG đòi MOS 30% — trả giá
+  hợp lý cho tăng trưởng thay vì chờ giá rẻ tuyệt đối. Yêu cầu kỹ thuật tối thiểu
+  Stage 1 muộn/Stage 2 (không mua tăng trưởng trong Stage 4). Giữ 1–2 năm. Bán khi
+  ĐÀ TĂNG TRƯỞNG GÃY (2 quý liên tiếp hụt kỳ vọng) hoặc PEG >2, không phải khi giá
+  chỉnh. ⛔ CẤM áp GARP cho cổ phiếu chu kỳ (thép, chứng khoán, hàng hoá) — "tăng
+  trưởng" của cyclical ở đỉnh chu kỳ là cái bẫy kinh điển.
 - **Chế độ TRADER MOMENTUM**: cơ bản chỉ là bộ lọc chất lượng; kỹ thuật quyết định
   vào/ra hoàn toàn; chấp nhận trả TRÊN giá trị nội tại; stop giá 7–8% cứng; giữ
   tuần–tháng. (Lưu ý: "cơ bản" của Minervini là tăng trưởng lợi nhuận làm bộ lọc,
@@ -72,6 +81,7 @@ bán, khác cắt lỗ). Không trộn — chọn chế độ cho vị thế nà
 |---|---|---|
 | ĐẠT (rẻ) | Stage 2, có nền/pivot | ✅ Cả 2 chế độ đồng ý — hiếm, tin cậy cao nhất. MUA theo pivot, stop 7–8% |
 | ĐẠT (rẻ) | Stage 4 đang rơi | ⚠️ Coi chừng BẪY GIÁ TRỊ. Chế độ giá trị: chờ đáy xác nhận + về vùng tích luỹ. Không bắt dao rơi dù rẻ |
+| Tăng trưởng lõi ≥15%/năm, PEG ≲1,5 (không phải cyclical) | Stage 1 muộn/Stage 2 | ✅ Chế độ GARP: mua ở giá hợp lý, giữ 1–2 năm, bán khi đà tăng trưởng gãy — đây là cửa giải ngân cho thị trường không có hoảng loạn |
 | KHÔNG ĐẠT (đắt) | Stage 2 mạnh | ⚠️ TRADE MOMENTUM THUẦN. Chỉ vào nếu ở chế độ trader, stop chặt. Cấm gọi đây là "đầu tư" |
 | KHÔNG ĐẠT (đắt) | Stage 4 | ⛔ Tệ cả hai — TRÁNH |
 
@@ -80,10 +90,15 @@ khác nhau), không cần phân xử bên nào đúng — cả hai đồng ý v�
 hiệu tin cậy cao nhất framework tạo ra.
 
 ## KẾT LUẬN: [MUA / TÍCH LUỸ / THEO DÕI / TRÁNH]
-- CHẾ ĐỘ đã chọn: [Đầu tư giá trị / Trader momentum] — vì …
-- Vùng tích luỹ (giá hợp lý): … | Vùng mua hời (hiếm): … | Giá hiện tại: …
+- CHẾ ĐỘ đã chọn: [Đầu tư giá trị / GARP / Trader momentum] — vì …
+- KẾ HOẠCH GIẢI NGÂN 3 TẦNG (chỉ cho doanh nghiệp hạng A — mô hình ★4+ và Munger ★3+;
+  doanh nghiệp thường bỏ tầng 1, chỉ mua từ tầng 2):
+  * Tầng 1 — Fair value (≤ trung điểm nội tại): mở 25–30% vị thế mục tiêu
+  * Tầng 2 — Vùng tích luỹ (chiết khấu ≥10–15%): nâng lên 60–70%
+  * Tầng 3 — Vùng mua hời (MOS ≥30% vs thận trọng): đủ 100%, cân nhắc vượt tỷ trọng
 - Điểm vào kỹ thuật (nếu chơi momentum): pivot … + stop … — GHI RÕ nếu điểm này
   cao hơn vùng tích luỹ giá trị (nghĩa là đây là trade, không phải đầu tư)
+- Tỷ trọng tối đa cho mã này trong danh mục: …% (theo /phan-bo-von nếu có hồ sơ)
 - Điều kiện vô hiệu hoá luận điểm: 1… 2… 3…
 ```
 
@@ -93,5 +108,6 @@ hiệu tin cậy cao nhất framework tạo ra.
 - **CẤM cộng điểm cơ bản với điểm kỹ thuật thành một con số** — đọc thành 2 khối, quyết định theo ma trận.
 - Nếu Munger ≤2★ → khối cơ bản tối đa là KHÔNG ĐẠT/THEO DÕI (quyền phủ quyết rủi ro).
 - Minervini KHÔNG có quyền nâng kết luận cơ bản: cơ bản KHÔNG ĐẠT thì đồ thị đẹp cỡ nào cũng chỉ là trade momentum, cấm gọi là đầu tư; Minervini chỉ quyết thời điểm/cách vào lệnh.
-- Vùng giá 2 tầng là bắt buộc: "vùng tích luỹ" cho doanh nghiệp chất lượng cao (Munger: "doanh nghiệp tuyệt vời ở giá hợp lý thắng doanh nghiệp hợp lý ở giá tuyệt vời"), "vùng mua hời" chỉ xuất hiện vài lần mỗi thập kỷ — ghi rõ cả hai để người đọc tự chọn khẩu vị.
+- Giải ngân 3 tầng là bắt buộc thay cho quyết định nhị phân mua/không mua: đầu tư thực tế là bài toán LIỀU LƯỢNG. Tầng 1 (fair value, 25–30%) chỉ dành cho doanh nghiệp hạng A — đây là câu trả lời cho "chờ MOS 30% thì không bao giờ được giải ngân" mà không phá kỷ luật: có chân trong doanh nghiệp tốt, nhưng phần đạn lớn vẫn dành cho hoảng loạn (Munger: "doanh nghiệp tuyệt vời ở giá hợp lý thắng doanh nghiệp hợp lý ở giá tuyệt vời").
+- Chế độ GARP vẫn chịu quyền phủ quyết của Munger (≤2★ → không mua kiểu gì) và vẫn cấm với cổ phiếu chu kỳ. GARP là cửa giải ngân cho thị trường bình thường, không phải cửa hạ chuẩn: tăng trưởng phải là LÕI (đã bóc lãi một lần), không phải đỉnh chu kỳ.
 - Khi điểm vào kỹ thuật (pivot) CAO hơn vùng tích luỹ giá trị → phải nói thẳng: mã này là cú trade, value và momentum không đồng ý ở bất kỳ giá nào, không phải khoản nắm giữ dài hạn kiểu Berkshire.

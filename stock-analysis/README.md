@@ -38,13 +38,20 @@ pip install -r stock-analysis/requirements.txt
 Mở Claude Code và gõ trực tiếp:
 
 ```
-/phan-tich-dau-tu FPT              # Phân tích sâu một công ty
-/hoi-dong-dau-tu HPG               # 4 agent đối kháng phân tích song song
+/phan-tich-dau-tu FPT              # Phân tích sâu một công ty (4 lăng kính)
+/hoi-dong-dau-tu HPG               # 5 agent đối kháng song song (4 cơ bản + 1 kỹ thuật)
+/phan-tich-ky-thuat FPT            # Kỹ thuật Minervini/SEPA — trả lời THỜI ĐIỂM mua
 /doc-bao-cao-tai-chinh VNM         # Đọc sâu BCTC / báo cáo thường niên
 /loc-co-phieu ngành bán lẻ         # Phễu lọc ngành 30 → 10 → 3
 /checklist-dau-tu MWG, FPT, PNJ    # Checklist 6 cổng kiểu Buffett
 /theo-doi-luan-diem VCB            # Theo dõi luận điểm sau khi đã mua
+/phan-bo-von 500 triệu, khẩu vị vừa # Thiết kế 3 túi vốn + liều lượng giải ngân
 ```
+
+**Ba chế độ, không trộn lẫn:** framework phân biệt rõ *Đầu tư giá trị* (mua dưới nội tại,
+giữ nhiều năm), *GARP* (tăng trưởng ở giá hợp lý, giữ 1–2 năm) và *Trader momentum*
+(theo pivot Minervini, stop 7–8%). Giải ngân theo **3 tầng giá** (fair value 25–30% →
+tích luỹ 60–70% → mua hời 100%) thay vì quyết định nhị phân mua/không mua.
 
 ## 📁 Cấu trúc
 
@@ -52,11 +59,13 @@ Mở Claude Code và gõ trực tiếp:
 stock-analysis/
 ├── skills/                    # Các skill Claude Code (slash command)
 │   ├── phan-tich-dau-tu/      #   Phân tích sâu 1 công ty qua 4 lăng kính
-│   ├── hoi-dong-dau-tu/       #   4 agent độc lập + Trưởng nhóm tổng hợp
+│   ├── hoi-dong-dau-tu/       #   5 agent độc lập + Trưởng nhóm (2 khối + ma trận)
+│   ├── phan-tich-ky-thuat/    #   Minervini/SEPA: Trend Template, Stage, VCP, pivot
 │   ├── doc-bao-cao-tai-chinh/ #   Đọc sâu BCTC, soi chất lượng lợi nhuận
 │   ├── loc-co-phieu/          #   Phễu lọc ngành 30 → 10 → 3
 │   ├── checklist-dau-tu/      #   6 cổng kiểm tra kiểu Buffett
-│   └── theo-doi-luan-diem/    #   Giám sát luận điểm đầu tư sau giải ngân
+│   ├── theo-doi-luan-diem/    #   Giám sát luận điểm đầu tư sau giải ngân
+│   └── phan-bo-von/           #   3 túi vốn (Beta/Giá trị/GARP-Momentum) + position sizing
 ├── tools/                     # Công cụ Python (độ chính xác Decimal)
 │   ├── fin_calc.py            #   DCF, owner earnings, biên an toàn, CAGR, ROIC…
 │   ├── data_fetch.py          #   Lấy giá & BCTC (vnstock / yfinance), đối chiếu chéo
