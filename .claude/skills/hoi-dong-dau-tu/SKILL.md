@@ -1,6 +1,6 @@
 ---
 name: hoi-dong-dau-tu
-description: Hội đồng đầu tư 5 agent đối kháng — triển khai song song 5 subagent độc lập (Đoàn Vĩnh Bình, Buffett, Munger, Lý Lục, Minervini kỹ thuật), mỗi agent tự nghiên cứu và chấm điểm riêng, Trưởng nhóm tổng hợp và làm nổi bật các điểm BẤT ĐỒNG. Dùng cho quyết định quan trọng cần nhiều góc nhìn, ví dụ "/hoi-dong-dau-tu HPG".
+description: Hội đồng đầu tư 5 agent đối kháng — triển khai song song 5 subagent độc lập (Đoàn Vĩnh Bình, Buffett, Munger, Lý Lục về CƠ BẢN + Minervini về KỸ THUẬT), mỗi agent tự nghiên cứu và chấm điểm riêng. Trưởng nhóm đọc thành 2 khối (không cộng gộp), tuyên bố chế độ đầu tư giá trị hay trader momentum, rồi ra quyết định theo ma trận cơ bản × kỹ thuật. Dùng cho quyết định quan trọng cần nhiều góc nhìn, ví dụ "/hoi-dong-dau-tu HPG".
 ---
 
 # Hội đồng đầu tư — 5 agent đối kháng
@@ -33,33 +33,65 @@ Dùng Agent tool, khởi chạy **cùng lúc** 5 subagent. Mỗi agent nhận pr
 ```
 # HỘI ĐỒNG ĐẦU TƯ: [CÔNG TY]
 
-## Bảng điểm
+## Bảng điểm — ĐỌC THÀNH 2 KHỐI, KHÔNG CỘNG GỘP
+> Điểm cơ bản (giá trị) và điểm kỹ thuật (momentum) là hai đơn vị khác nhau —
+> cộng chúng thành một con số /25 là phép cộng sai đơn vị (như cộng nhiệt độ với
+> vận tốc). Đọc riêng từng khối rồi ra quyết định theo ma trận ở Bước 3.
+
+**KHỐI CƠ BẢN** (trả lời: có nên sở hữu doanh nghiệp này, và đáng giá bao nhiêu?)
 | Agent | Điểm | Kết luận 1 câu |
 |---|---|---|
 | Đoàn Vĩnh Bình (mô hình) | ★x | … |
 | Buffett (định giá)       | ★x | … |
 | Munger (rủi ro)          | ★x | … |
 | Lý Lục (10 năm)          | ★x | … |
-| Minervini (thời điểm)    | ★x | … |
-| **Tổng**                 | x/25 | |
+| **Đồng thuận cơ bản**    | ĐẠT / KHÔNG ĐẠT | [đạt = mô hình + định giá + 10 năm đều ổn và Munger không phủ quyết] |
+
+**KHỐI KỸ THUẬT** (trả lời: dòng tiền sẵn sàng chưa, vào lệnh lúc nào?)
+| Agent | Điểm | Kết luận 1 câu |
+|---|---|---|
+| Minervini (thời điểm) | ★x | Trend Template x/8 · Stage x · [MUA PIVOT/CHỜ/TRÁNH] |
 
 ## 🔥 ĐIỂM BẤT ĐỒNG (quan trọng nhất)
 - Số liệu/nhận định nào các agent MÂU THUẪN nhau → vùng bất định thực sự
 - Đặc biệt chú ý mâu thuẫn CƠ BẢN vs KỸ THUẬT (định giá rẻ nhưng Stage 4, hay đắt nhưng Stage 2 mạnh) — đây là thông tin, không phải lỗi
 
+## TUYÊN BỐ CHẾ ĐỘ (Trưởng nhóm chọn 1 trước khi kết luận)
+Cơ bản và kỹ thuật là hai trò chơi khác nhau (khác chu kỳ nắm giữ, khác quy tắc
+bán, khác cắt lỗ). Không trộn — chọn chế độ cho vị thế này:
+- **Chế độ ĐẦU TƯ GIÁ TRỊ**: cơ bản quyết định tất cả, chỉ mua DƯỚI giá trị nội
+  tại; kỹ thuật chỉ để định thời điểm bên trong vùng tích luỹ (tránh bắt dao rơi).
+  Cắt lỗ theo luận điểm, giữ nhiều năm.
+- **Chế độ TRADER MOMENTUM**: cơ bản chỉ là bộ lọc chất lượng; kỹ thuật quyết định
+  vào/ra hoàn toàn; chấp nhận trả TRÊN giá trị nội tại; stop giá 7–8% cứng; giữ
+  tuần–tháng. (Lưu ý: "cơ bản" của Minervini là tăng trưởng lợi nhuận làm bộ lọc,
+  KHÔNG phải biên an toàn.)
+
+## MA TRẬN QUYẾT ĐỊNH (đọc mâu thuẫn cơ bản × kỹ thuật)
+| Cơ bản | Kỹ thuật | Hành động |
+|---|---|---|
+| ĐẠT (rẻ) | Stage 2, có nền/pivot | ✅ Cả 2 chế độ đồng ý — hiếm, tin cậy cao nhất. MUA theo pivot, stop 7–8% |
+| ĐẠT (rẻ) | Stage 4 đang rơi | ⚠️ Coi chừng BẪY GIÁ TRỊ. Chế độ giá trị: chờ đáy xác nhận + về vùng tích luỹ. Không bắt dao rơi dù rẻ |
+| KHÔNG ĐẠT (đắt) | Stage 2 mạnh | ⚠️ TRADE MOMENTUM THUẦN. Chỉ vào nếu ở chế độ trader, stop chặt. Cấm gọi đây là "đầu tư" |
+| KHÔNG ĐẠT (đắt) | Stage 4 | ⛔ Tệ cả hai — TRÁNH |
+
+**Quy tắc vàng:** khi cơ bản và kỹ thuật ĐỘC LẬP cùng nói "CHỜ" (dù ở giá kích hoạt
+khác nhau), không cần phân xử bên nào đúng — cả hai đồng ý về HÀNH ĐỘNG. Đây là tín
+hiệu tin cậy cao nhất framework tạo ra.
+
 ## KẾT LUẬN: [MUA / TÍCH LUỸ / THEO DÕI / TRÁNH]
+- CHẾ ĐỘ đã chọn: [Đầu tư giá trị / Trader momentum] — vì …
 - Vùng tích luỹ (giá hợp lý): … | Vùng mua hời (hiếm): … | Giá hiện tại: …
-- Kịch bản hành động kết hợp cơ bản + kỹ thuật:
-  * Cơ bản đạt + Stage 2 có pivot → MUA theo pivot của Minervini, stop 7-8%
-  * Cơ bản đạt + giá trong vùng tích luỹ nhưng kỹ thuật chưa có setup → TÍCH LUỸ từng phần hoặc đặt cảnh báo tại pivot
-  * Cơ bản đạt + Stage 4 → THEO DÕI, không bắt dao rơi dù rẻ
-  * Cơ bản không đạt → TRÁNH, bất kể đồ thị đẹp cỡ nào
+- Điểm vào kỹ thuật (nếu chơi momentum): pivot … + stop … — GHI RÕ nếu điểm này
+  cao hơn vùng tích luỹ giá trị (nghĩa là đây là trade, không phải đầu tư)
 - Điều kiện vô hiệu hoá luận điểm: 1… 2… 3…
 ```
 
 ## Quy tắc
 - 5 agent phải chạy **song song**, không tuần tự.
 - Trưởng nhóm KHÔNG được sửa điểm của agent; chỉ tổng hợp và phân xử bằng chứng cứ.
-- Nếu Munger ≤2★ → kết luận tối đa là THEO DÕI (quyền phủ quyết rủi ro), bất kể tổng điểm.
-- Minervini KHÔNG có quyền nâng kết luận cơ bản (TRÁNH vẫn là TRÁNH), chỉ có quyền quyết định thời điểm và cách vào lệnh khi cơ bản đã đạt.
+- **CẤM cộng điểm cơ bản với điểm kỹ thuật thành một con số** — đọc thành 2 khối, quyết định theo ma trận.
+- Nếu Munger ≤2★ → khối cơ bản tối đa là KHÔNG ĐẠT/THEO DÕI (quyền phủ quyết rủi ro).
+- Minervini KHÔNG có quyền nâng kết luận cơ bản: cơ bản KHÔNG ĐẠT thì đồ thị đẹp cỡ nào cũng chỉ là trade momentum, cấm gọi là đầu tư; Minervini chỉ quyết thời điểm/cách vào lệnh.
 - Vùng giá 2 tầng là bắt buộc: "vùng tích luỹ" cho doanh nghiệp chất lượng cao (Munger: "doanh nghiệp tuyệt vời ở giá hợp lý thắng doanh nghiệp hợp lý ở giá tuyệt vời"), "vùng mua hời" chỉ xuất hiện vài lần mỗi thập kỷ — ghi rõ cả hai để người đọc tự chọn khẩu vị.
+- Khi điểm vào kỹ thuật (pivot) CAO hơn vùng tích luỹ giá trị → phải nói thẳng: mã này là cú trade, value và momentum không đồng ý ở bất kỳ giá nào, không phải khoản nắm giữ dài hạn kiểu Berkshire.
