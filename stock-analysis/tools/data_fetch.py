@@ -6,6 +6,8 @@ Dùng:
     python3 data_fetch.py price AAPL --market us
     python3 data_fetch.py financials FPT           # BCTC 5 năm (KQKD, CĐKT, LCTT)
     python3 data_fetch.py history VNM --years 5    # lịch sử giá
+    python3 data_fetch.py screen                    # radar: quét rổ VN30 theo Trend Template
+    python3 data_fetch.py screen --universe FPT,HPG,MWG --min-from-low 0.30
 
 Quy ước nhận diện: mã 3 ký tự chữ hoa → mặc định thị trường VN; còn lại → quốc tế.
 Ghi đè bằng --market vn|us.
@@ -117,15 +119,80 @@ def us_history(symbol: str, years: int) -> None:
     stamp("yfinance")
 
 
+# Rổ VN30 mặc định cho lệnh screen (dùng khi không truyền --universe)
+VN30 = ("ACB BCM BID BVH CTG FPT GAS GVR HDB HPG MBB MSN MWG PLX POW SAB "
+        "SHB SSB SSI STB TCB TPB VCB VHM VIB VIC VJC VNM VPB VRE").split()
+
+
+def vn_screen(universe: list[str], min_from_low: float) -> None:
+    """Radar Chế độ B — quét Trend Template rút gọn cho một rổ mã VN (cần vnstock).
+
+    Với mỗi mã: lấy ~1 năm giá, tính MA50/150/200, kiểm các tiêu chí Minervini
+    (giá > các MA, MA xếp thứ tự, cách đỉnh 52T ≤25%, trên đáy 52T ≥ min_from_low)
+    và đo RS đơn giản (hiệu suất 6 tháng). In các mã ĐẠT để đưa vào Vòng 1 của radar.
+    Sandbox chặn vnstock (403) nên hàm này chỉ chạy khi có mạng vnstock (vd máy local).
+    """
+    import statistics
+
+    passed = []
+    print(f"{'Mã':>6} {'Giá':>10} {'MA50':>10} {'MA200':>10} "
+          f"{'%đáy':>7} {'%đỉnh':>7} {'6th':>7}  Kết quả")
+    for sym in universe:
+        try:
+            stock = vn_client(sym)
+            df = stock.quote.history(start=str(date.today() - timedelta(days=400)),
+                                     end=str(date.today()), interval="1D")
+            closes = [float(x) for x in df["close"].tolist()]
+            if len(closes) < 200:
+                print(f"{sym:>6}  (thiếu dữ liệu, bỏ qua)")
+                continue
+            price = closes[-1]
+            ma50 = statistics.fmean(closes[-50:])
+            ma150 = statistics.fmean(closes[-150:])
+            ma200 = statistics.fmean(closes[-200:])
+            hi52, lo52 = max(closes[-250:]), min(closes[-250:])
+            from_low = (price - lo52) / lo52
+            from_high = (price - hi52) / hi52
+            ret6m = (price - closes[-120]) / closes[-120] if len(closes) >= 120 else 0.0
+            ok = (price > ma50 > ma150 > ma200 and ma200 > statistics.fmean(closes[-220:-20])
+                  and from_high >= -0.25 and from_low >= min_from_low)
+            print(f"{sym:>6} {price:>10.0f} {ma50:>10.0f} {ma200:>10.0f} "
+                  f"{from_low:>6.0%} {from_high:>6.0%} {ret6m:>6.0%}  "
+                  f"{'✅ ĐẠT momentum' if ok else '—'}")
+            if ok:
+                passed.append((sym, ret6m))
+        except Exception as e:  # noqa: BLE001 - một mã lỗi không được chặn cả rổ
+            print(f"{sym:>6}  (lỗi: {e})")
+
+    print("\n=== ĐẠT bộ lọc momentum (xếp theo RS 6 tháng) ===")
+    for sym, r in sorted(passed, key=lambda x: x[1], reverse=True):
+        print(f"  {sym}  (6th {r:+.0%})")
+    print("\n[Bước tiếp] Với mỗi mã ĐẠT: kiểm tăng trưởng LN quý gần nhất bằng "
+          "`data_fetch.py financials <mã>` (loại mã earnings giảm tốc), rồi dựng "
+          "trade-plan. Đây mới là Vòng 1 của radar — chưa lọc chất lượng.")
+    stamp("vnstock/VCI")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("cmd", choices=["price", "financials", "history"])
-    p.add_argument("symbol")
+    p.add_argument("cmd", choices=["price", "financials", "history", "screen"])
+    p.add_argument("symbol", nargs="?", help="Mã CP (không cần cho lệnh screen)")
     p.add_argument("--market", choices=["vn", "us"], help="Ghi đè nhận diện thị trường")
     p.add_argument("--years", type=int, default=5)
+    p.add_argument("--universe", help="screen: danh sách mã phân tách bằng dấu phẩy "
+                                      "(mặc định rổ VN30)")
+    p.add_argument("--min-from-low", type=float, default=0.30,
+                   help="screen: ngưỡng %% tối thiểu trên đáy 52T (mặc định 0.30)")
     a = p.parse_args()
 
+    if a.cmd == "screen":
+        universe = [s.strip().upper() for s in a.universe.split(",")] if a.universe else VN30
+        vn_screen(universe, a.min_from_low)
+        return
+
+    if not a.symbol:
+        p.error("cần 'symbol' cho lệnh price/financials/history")
     symbol = a.symbol.upper()
     market = detect_market(symbol, a.market)
     fn = {("vn", "price"): vn_price, ("vn", "financials"): vn_financials,

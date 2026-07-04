@@ -40,6 +40,7 @@ Mở Claude Code và gõ trực tiếp:
 ```
 /phan-tich-dau-tu FPT              # Phân tích sâu một công ty (4 lăng kính)
 /hoi-dong-dau-tu HPG               # 5 agent đối kháng — ĐẦU TƯ giá trị (giữ nhiều năm)
+/radar-luot-song                   # Radar QUÉT thị trường tìm mã lướt sóng (giao momentum × earnings)
 /hoi-dong-luot-song FPT            # 3 agent nhẹ — LƯỚT SÓNG momentum (giữ 3–6 tháng)
 /phan-tich-ky-thuat FPT            # Kỹ thuật Minervini/SEPA — trả lời THỜI ĐIỂM mua
 /doc-bao-cao-tai-chinh VNM         # Đọc sâu BCTC / báo cáo thường niên
@@ -54,6 +55,12 @@ giữ nhiều năm), *GARP* (tăng trưởng ở giá hợp lý, giữ 1–2 nă
 (theo pivot Minervini, stop 7–8%). Giải ngân theo **3 tầng giá** (fair value 25–30% →
 tích luỹ 60–70% → mua hời 100%) thay vì quyết định nhị phân mua/không mua.
 
+**Hai luồng làm việc:**
+- 🏛️ *Đầu tư giá trị*: `/loc-co-phieu` (tìm ngành) → `/hoi-dong-dau-tu` (thẩm định 5 lăng kính)
+  → `/phan-bo-von` (giải ngân 3 tầng) → `/theo-doi-luan-diem` (giám sát nhiều năm).
+- 🚀 *Lướt sóng momentum*: `/radar-luot-song` (quét tìm mã) → `/hoi-dong-luot-song` (thẩm định
+  3 vai + dò mìn) → `/phan-bo-von` túi Momentum (position size, stop 7–8%, giữ 3–6 tháng).
+
 ## 📁 Cấu trúc
 
 ```
@@ -61,6 +68,7 @@ stock-analysis/
 ├── skills/                    # Các skill Claude Code (slash command)
 │   ├── phan-tich-dau-tu/      #   Phân tích sâu 1 công ty qua 4 lăng kính
 │   ├── hoi-dong-dau-tu/       #   5 agent — ĐẦU TƯ giá trị (2 khối + ma trận)
+│   ├── radar-luot-song/       #   Radar quét mã lướt sóng (giao momentum × earnings tăng tốc)
 │   ├── hoi-dong-luot-song/    #   3 agent nhẹ — LƯỚT SÓNG momentum 3–6 tháng (kế hoạch giao dịch)
 │   ├── phan-tich-ky-thuat/    #   Minervini/SEPA: Trend Template, Stage, VCP, pivot
 │   ├── doc-bao-cao-tai-chinh/ #   Đọc sâu BCTC, soi chất lượng lợi nhuận
