@@ -39,7 +39,8 @@ Mở Claude Code và gõ trực tiếp:
 
 ```
 /phan-tich-dau-tu FPT              # Phân tích sâu một công ty (4 lăng kính)
-/hoi-dong-dau-tu HPG               # 5 agent đối kháng song song (4 cơ bản + 1 kỹ thuật)
+/hoi-dong-dau-tu HPG               # 5 agent đối kháng — ĐẦU TƯ giá trị (giữ nhiều năm)
+/hoi-dong-luot-song FPT            # 3 agent nhẹ — LƯỚT SÓNG momentum (giữ 3–6 tháng)
 /phan-tich-ky-thuat FPT            # Kỹ thuật Minervini/SEPA — trả lời THỜI ĐIỂM mua
 /doc-bao-cao-tai-chinh VNM         # Đọc sâu BCTC / báo cáo thường niên
 /loc-co-phieu ngành bán lẻ         # Phễu lọc ngành 30 → 10 → 3
@@ -59,7 +60,8 @@ tích luỹ 60–70% → mua hời 100%) thay vì quyết định nhị phân mu
 stock-analysis/
 ├── skills/                    # Các skill Claude Code (slash command)
 │   ├── phan-tich-dau-tu/      #   Phân tích sâu 1 công ty qua 4 lăng kính
-│   ├── hoi-dong-dau-tu/       #   5 agent độc lập + Trưởng nhóm (2 khối + ma trận)
+│   ├── hoi-dong-dau-tu/       #   5 agent — ĐẦU TƯ giá trị (2 khối + ma trận)
+│   ├── hoi-dong-luot-song/    #   3 agent nhẹ — LƯỚT SÓNG momentum 3–6 tháng (kế hoạch giao dịch)
 │   ├── phan-tich-ky-thuat/    #   Minervini/SEPA: Trend Template, Stage, VCP, pivot
 │   ├── doc-bao-cao-tai-chinh/ #   Đọc sâu BCTC, soi chất lượng lợi nhuận
 │   ├── loc-co-phieu/          #   Phễu lọc ngành 30 → 10 → 3

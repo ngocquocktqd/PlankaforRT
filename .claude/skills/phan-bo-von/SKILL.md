@@ -26,7 +26,7 @@ Trả lời trực diện câu "chờ giá rẻ thì không bao giờ được g
 |---|---|---|---|---|---|
 | 🌊 **BETA** — tham gia đều | Ăn tăng trưởng EPS + cổ tức của cả thị trường (~12–15%/năm dài hạn ở VN), không cần chọn thời điểm | DCA định kỳ (tháng/quý) vào ETF index (E1VFVN30, FUEVFVND…) hoặc rổ 5–8 cổ phiếu hạng A đã qua /checklist-dau-tu; KHÔNG bán theo nhịp chỉnh | 50% | 40% | 30% |
 | 🎯 **GIÁ TRỊ** — săn hoảng loạn | Đạn dành riêng cho vùng tích luỹ/mua hời của các mã đã có luận điểm sẵn (từ /hoi-dong-dau-tu, /phan-tich-dau-tu) | Chỉ giải ngân theo 3 tầng giá; giữ nhiều năm; bán theo luận điểm. Túi này NẰM IM Ở TIỀN MẶT/trái phiếu ngắn hạn có khi 1–2 năm — đó là tính năng, không phải lãng phí | 25% | 30% | 30% |
-| 🚀 **GARP/MOMENTUM** — cơ hội | Doanh nghiệp tăng trưởng ở giá hợp lý (GARP, giữ 1–2 năm) hoặc trade theo pivot Minervini (stop 7–8%) | Vào/ra theo luật của chế độ tương ứng trong /hoi-dong-dau-tu; lỗ thì cắt, KHÔNG "chuyển hộ khẩu" sang túi giá trị để biện minh việc ôm lệnh thua | 10% | 20% | 30% |
+| 🚀 **GARP/MOMENTUM** — cơ hội | Doanh nghiệp tăng trưởng ở giá hợp lý (GARP, giữ 1–2 năm) hoặc trade lướt sóng 3–6 tháng theo pivot Minervini (stop 7–8%) | Chọn lệnh momentum bằng **/hoi-dong-luot-song**; GARP bằng /hoi-dong-dau-tu. Lỗ thì cắt, KHÔNG "chuyển hộ khẩu" sang túi giá trị để biện minh việc ôm lệnh thua | 10% | 20% | 30% |
 | 💵 **Tiền mặt chiến thuật** | Dầu bôi trơn + quyền chọn khủng hoảng | Không bao giờ về 0 | 15% | 10% | 10% |
 
 **Luật thép giữa các túi:**
