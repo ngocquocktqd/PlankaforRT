@@ -6,8 +6,9 @@ Dùng:
     python3 data_fetch.py price AAPL --market us
     python3 data_fetch.py financials FPT           # BCTC 5 năm (KQKD, CĐKT, LCTT)
     python3 data_fetch.py history VNM --years 5    # lịch sử giá
-    python3 data_fetch.py screen                    # radar: quét rổ VN30 theo Trend Template
-    python3 data_fetch.py screen --universe FPT,HPG,MWG --min-from-low 0.30
+    python3 data_fetch.py screen                    # radar: quét VN30+MID theo Trend Template
+    python3 data_fetch.py screen --universe mid     # chỉ rổ mid-cap (preset: vn30|mid|all)
+    python3 data_fetch.py screen --universe FPT,HPG,MWG --min-from-low 0.30 --min-value 20
 
 Quy ước nhận diện: mã 3 ký tự chữ hoa → mặc định thị trường VN; còn lại → quốc tế.
 Ghi đè bằng --market vn|us.
@@ -119,30 +120,37 @@ def us_history(symbol: str, years: int) -> None:
     stamp("yfinance")
 
 
-# Rổ VN30 mặc định cho lệnh screen (dùng khi không truyền --universe)
+# Rổ mặc định cho lệnh screen. Radar lướt sóng nghiêng mid-cap (bài học ACB:
+# large-cap chạy chậm, R:R mỏng) nên preset "all" = VN30 + MID.
 VN30 = ("ACB BCM BID BVH CTG FPT GAS GVR HDB HPG MBB MSN MWG PLX POW SAB "
         "SHB SSB SSI STB TCB TPB VCB VHM VIB VIC VJC VNM VPB VRE").split()
+MID = ("VND VCI HCM VIX MBS FTS BSI CTS DGC DPM DCM DGW FRT PNJ VHC ANV HAH "
+       "GMD VSC PVD PC1 REE GEX VGC KBC IDC SZC NLG KDH DXG HDG DBC HSG NKG "
+       "VTP CTR EVF").split()
+UNIVERSE_PRESETS = {"vn30": VN30, "mid": MID, "all": VN30 + MID}
 
 
-def vn_screen(universe: list[str], min_from_low: float) -> None:
+def vn_screen(universe: list[str], min_from_low: float, min_value: float) -> None:
     """Radar Chế độ B — quét Trend Template rút gọn cho một rổ mã VN (cần vnstock).
 
     Với mỗi mã: lấy ~1 năm giá, tính MA50/150/200, kiểm các tiêu chí Minervini
-    (giá > các MA, MA xếp thứ tự, cách đỉnh 52T ≤25%, trên đáy 52T ≥ min_from_low)
-    và đo RS đơn giản (hiệu suất 6 tháng). In các mã ĐẠT để đưa vào Vòng 1 của radar.
+    (giá > các MA, MA xếp thứ tự, MA200 dốc lên, cách đỉnh 52T ≤25%, trên đáy 52T
+    ≥ min_from_low), đo RS đơn giản (hiệu suất 6 tháng) và GTGD bình quân 20 phiên
+    (tỷ VND — lọc thanh khoản min_value). In các mã ĐẠT cho Vòng 1 của radar.
     Sandbox chặn vnstock (403) nên hàm này chỉ chạy khi có mạng vnstock (vd máy local).
     """
     import statistics
 
     passed = []
     print(f"{'Mã':>6} {'Giá':>10} {'MA50':>10} {'MA200':>10} "
-          f"{'%đáy':>7} {'%đỉnh':>7} {'6th':>7}  Kết quả")
+          f"{'%đáy':>7} {'%đỉnh':>7} {'6th':>7} {'GTGD':>8}  Kết quả")
     for sym in universe:
         try:
             stock = vn_client(sym)
             df = stock.quote.history(start=str(date.today() - timedelta(days=400)),
                                      end=str(date.today()), interval="1D")
             closes = [float(x) for x in df["close"].tolist()]
+            vols = [float(x) for x in df["volume"].tolist()]
             if len(closes) < 200:
                 print(f"{sym:>6}  (thiếu dữ liệu, bỏ qua)")
                 continue
@@ -154,22 +162,26 @@ def vn_screen(universe: list[str], min_from_low: float) -> None:
             from_low = (price - lo52) / lo52
             from_high = (price - hi52) / hi52
             ret6m = (price - closes[-120]) / closes[-120] if len(closes) >= 120 else 0.0
+            # GTGD bình quân 20 phiên, đơn vị tỷ VND (giá vnstock tính bằng VND)
+            avg_value = statistics.fmean(c * v for c, v in
+                                         zip(closes[-20:], vols[-20:])) / 1e9
+            liquid = avg_value >= min_value
             ok = (price > ma50 > ma150 > ma200 and ma200 > statistics.fmean(closes[-220:-20])
-                  and from_high >= -0.25 and from_low >= min_from_low)
+                  and from_high >= -0.25 and from_low >= min_from_low and liquid)
+            note = "✅ ĐẠT momentum" if ok else ("— (kém thanh khoản)" if not liquid else "—")
             print(f"{sym:>6} {price:>10.0f} {ma50:>10.0f} {ma200:>10.0f} "
-                  f"{from_low:>6.0%} {from_high:>6.0%} {ret6m:>6.0%}  "
-                  f"{'✅ ĐẠT momentum' if ok else '—'}")
+                  f"{from_low:>6.0%} {from_high:>6.0%} {ret6m:>6.0%} {avg_value:>7.0f}t  {note}")
             if ok:
                 passed.append((sym, ret6m))
         except Exception as e:  # noqa: BLE001 - một mã lỗi không được chặn cả rổ
             print(f"{sym:>6}  (lỗi: {e})")
 
-    print("\n=== ĐẠT bộ lọc momentum (xếp theo RS 6 tháng) ===")
+    print("\n=== ĐẠT bộ lọc momentum + thanh khoản (xếp theo RS 6 tháng) ===")
     for sym, r in sorted(passed, key=lambda x: x[1], reverse=True):
         print(f"  {sym}  (6th {r:+.0%})")
     print("\n[Bước tiếp] Với mỗi mã ĐẠT: kiểm tăng trưởng LN quý gần nhất bằng "
-          "`data_fetch.py financials <mã>` (loại mã earnings giảm tốc), rồi dựng "
-          "trade-plan. Đây mới là Vòng 1 của radar — chưa lọc chất lượng.")
+          "`data_fetch.py financials <mã>` (loại mã earnings giảm tốc — bẫy CTS), "
+          "rồi dựng trade-plan. Đây mới là Vòng 1 của radar — chưa lọc chất lượng.")
     stamp("vnstock/VCI")
 
 
@@ -180,15 +192,19 @@ def main() -> None:
     p.add_argument("symbol", nargs="?", help="Mã CP (không cần cho lệnh screen)")
     p.add_argument("--market", choices=["vn", "us"], help="Ghi đè nhận diện thị trường")
     p.add_argument("--years", type=int, default=5)
-    p.add_argument("--universe", help="screen: danh sách mã phân tách bằng dấu phẩy "
-                                      "(mặc định rổ VN30)")
+    p.add_argument("--universe", help="screen: preset vn30|mid|all hoặc danh sách mã "
+                                      "phân tách bằng dấu phẩy (mặc định: all)")
     p.add_argument("--min-from-low", type=float, default=0.30,
                    help="screen: ngưỡng %% tối thiểu trên đáy 52T (mặc định 0.30)")
+    p.add_argument("--min-value", type=float, default=20.0,
+                   help="screen: GTGD bình quân 20 phiên tối thiểu, tỷ VND (mặc định 20)")
     a = p.parse_args()
 
     if a.cmd == "screen":
-        universe = [s.strip().upper() for s in a.universe.split(",")] if a.universe else VN30
-        vn_screen(universe, a.min_from_low)
+        key = (a.universe or "all").strip().lower()
+        universe = UNIVERSE_PRESETS.get(key) or \
+            [s.strip().upper() for s in a.universe.split(",")]
+        vn_screen(universe, a.min_from_low, a.min_value)
         return
 
     if not a.symbol:
