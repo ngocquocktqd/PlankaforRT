@@ -48,6 +48,7 @@ Mở Claude Code và gõ trực tiếp:
 /checklist-dau-tu MWG, FPT, PNJ    # Checklist 6 cổng kiểu Buffett
 /theo-doi-luan-diem VCB            # Theo dõi luận điểm sau khi đã mua
 /phan-bo-von 500 triệu, khẩu vị vừa # Thiết kế 3 túi vốn + liều lượng giải ngân
+/vi-mo                             # Bảng điều khiển vĩ mô VN + thế giới → regime + đèn 🟢🟡🔴
 ```
 
 **Ba chế độ, không trộn lẫn:** framework phân biệt rõ *Đầu tư giá trị* (mua dưới nội tại,
@@ -55,11 +56,12 @@ giữ nhiều năm), *GARP* (tăng trưởng ở giá hợp lý, giữ 1–2 nă
 (theo pivot Minervini, stop 7–8%). Giải ngân theo **3 tầng giá** (fair value 25–30% →
 tích luỹ 60–70% → mua hời 100%) thay vì quyết định nhị phân mua/không mua.
 
-**Hai luồng làm việc:**
+**Hai luồng làm việc** (đều bắt đầu bằng `/vi-mo` để chỉnh khẩu vị + ưu tiên ngành):
 - 🏛️ *Đầu tư giá trị*: `/loc-co-phieu` (tìm ngành) → `/hoi-dong-dau-tu` (thẩm định 5 lăng kính)
   → `/phan-bo-von` (giải ngân 3 tầng) → `/theo-doi-luan-diem` (giám sát nhiều năm).
 - 🚀 *Lướt sóng momentum*: `/radar-luot-song` (quét tìm mã) → `/hoi-dong-luot-song` (thẩm định
   3 vai + dò mìn) → `/phan-bo-von` túi Momentum (position size, stop 7–8%, giữ 3–6 tháng).
+- 🌐 *Bối cảnh*: `/vi-mo` cho regime chu kỳ + đèn 🟢🟡🔴 → nuôi Bước 0 của radar và khẩu vị phân bổ.
 
 ## 📁 Cấu trúc
 
@@ -75,7 +77,8 @@ stock-analysis/
 │   ├── loc-co-phieu/          #   Phễu lọc ngành 30 → 10 → 3
 │   ├── checklist-dau-tu/      #   6 cổng kiểm tra kiểu Buffett
 │   ├── theo-doi-luan-diem/    #   Giám sát luận điểm đầu tư sau giải ngân
-│   └── phan-bo-von/           #   3 túi vốn (Beta/Giá trị/GARP-Momentum) + position sizing
+│   ├── phan-bo-von/           #   3 túi vốn (Beta/Giá trị/GARP-Momentum) + position sizing
+│   └── vi-mo/                 #   Bảng điều khiển vĩ mô → regime chu kỳ + đèn tổng + xoay ngành
 ├── tools/                     # Công cụ Python (độ chính xác Decimal)
 │   ├── fin_calc.py            #   DCF, owner earnings, biên an toàn, CAGR, ROIC…
 │   ├── data_fetch.py          #   Lấy giá & BCTC (vnstock / yfinance), đối chiếu chéo
