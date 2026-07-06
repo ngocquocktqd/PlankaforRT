@@ -1,0 +1,6 @@
+# Nguồn dữ liệu cổ phiếu Việt Nam (HOSE/HNX/UPCoM)
+vnstock>=3.2.0
+# Nguồn dữ liệu cổ phiếu quốc tế
+yfinance>=0.2.50
+# Xử lý bảng số liệu
+pandas>=2.0
