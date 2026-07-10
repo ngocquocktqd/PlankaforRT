@@ -113,9 +113,16 @@ Trade-plan từng mã (tính R:R bằng `fin_calc.py` khi cần):
 ```
 
 **Lưu vết & độ bền radar:** ghi kết quả vào `stock-analysis/reports/radar.md` (kèm ngày,
-giữ các lần quét cũ). Lần quét sau đối chiếu: **mã xuất hiện liên tiếp ≥2–3 lần quét mà
-vẫn giữ cấu trúc = leader bền** (O'Neil: leader thật tái xuất hiện) — đáng tin hơn mã mới
-loé một lần; mã rớt khỏi radar giữa các lần quét → xoá alert.
+giữ các lần quét cũ). Lần quét sau đối chiếu — nhưng "độ bền" phải đo ĐÚNG thứ, không phải
+cứ tái xuất hiện là "leader bền":
+- **BỀN = leader thật** CHỈ khi mỗi lần tái xuất hiện, mã vẫn **giữ cấu trúc Stage 2** (giá
+  trên MA, RS dương) VÀ **tiến gần/đang phá pivot** với volume cải thiện. Đây mới là "leader
+  thật tái xuất hiện" của O'Neil — đáng tin hơn mã mới loé một lần.
+- **BỀN = BẪY (dead money)** nếu mã tái xuất hiện mà lần nào cũng **kẹt DƯỚI pivot / dưới MA
+  / RS âm** — đó là sự bền của trạng thái ĐI NGANG, KHÔNG phải sức mạnh momentum. Bài học
+  CTG (08-09/07): xuất hiện 3 lần liền ở cùng pivot 35,5k nhưng hội đồng lộ ra Stage 1, kẹt
+  dưới MA 6 tháng = tiền chết. Loại này phải **HẠ CẤP/loại**, tuyệt đối không nâng thành "leader bền".
+- Mã rớt hẳn khỏi radar giữa các lần quét → xoá alert.
 
 ## Quy tắc thép
 - Radar chỉ SÀNG, KHÔNG thay thẩm định: mã nhóm A–B phải qua `/hoi-dong-luot-song` rồi
