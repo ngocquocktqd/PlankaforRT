@@ -42,6 +42,8 @@ Mở Claude Code và gõ trực tiếp:
 /hoi-dong-dau-tu HPG               # 5 agent đối kháng — ĐẦU TƯ giá trị (giữ nhiều năm)
 /radar-luot-song                   # Radar QUÉT thị trường tìm mã lướt sóng (giao momentum × earnings)
 /hoi-dong-luot-song FPT            # 3 agent nhẹ — LƯỚT SÓNG momentum (giữ 3–6 tháng)
+/radar-chung-quyen                 # Radar QUÉT chứng quyền (CW) — giao cơ sở Stage 2 × CW cấu trúc tốt
+/hoi-dong-chung-quyen FPT          # 3 vai — LƯỚT CHỨNG QUYỀN (CW) đòn bẩy cao, chân trời vài tuần
 /phan-tich-ky-thuat FPT            # Kỹ thuật Minervini/SEPA — trả lời THỜI ĐIỂM mua
 /doc-bao-cao-tai-chinh VNM         # Đọc sâu BCTC / báo cáo thường niên
 /loc-co-phieu ngành bán lẻ         # Phễu lọc ngành 30 → 10 → 3
@@ -61,6 +63,9 @@ tích luỹ 60–70% → mua hời 100%) thay vì quyết định nhị phân mu
   → `/phan-bo-von` (giải ngân 3 tầng) → `/theo-doi-luan-diem` (giám sát nhiều năm).
 - 🚀 *Lướt sóng momentum*: `/radar-luot-song` (quét tìm mã) → `/hoi-dong-luot-song` (thẩm định
   3 vai + dò mìn) → `/phan-bo-von` túi Momentum (position size, stop 7–8%, giữ 3–6 tháng).
+- ⚡ *Lướt chứng quyền (CW)*: `/radar-chung-quyen` (quét CW: giao cơ sở Stage 2 × CW cấu trúc tốt)
+  → `/hoi-dong-chung-quyen` (3 vai: Cơ-sở quyết hướng, Chọn-CW quyết công cụ, Kiểm-mìn-CW phủ quyết).
+  Đòn bẩy cực đại + theta → size cực nhỏ, stop theo GIÁ CƠ SỞ, time-stop trước đáo hạn. Chỉ chơi khi index Stage 2.
 - 🌐 *Bối cảnh*: `/vi-mo` cho regime chu kỳ + đèn 🟢🟡🔴 → nuôi Bước 0 của radar và khẩu vị phân bổ.
 
 ## 📁 Cấu trúc
@@ -72,6 +77,8 @@ stock-analysis/
 │   ├── hoi-dong-dau-tu/       #   5 agent — ĐẦU TƯ giá trị (2 khối + ma trận)
 │   ├── radar-luot-song/       #   Radar quét mã lướt sóng (giao momentum × earnings tăng tốc)
 │   ├── hoi-dong-luot-song/    #   3 agent nhẹ — LƯỚT SÓNG momentum 3–6 tháng (kế hoạch giao dịch)
+│   ├── radar-chung-quyen/     #   Radar quét CW (giao cơ sở Stage 2 × CW cấu trúc tốt)
+│   ├── hoi-dong-chung-quyen/  #   3 vai — LƯỚT CHỨNG QUYỀN (CW), đòn bẩy cao, vài tuần
 │   ├── phan-tich-ky-thuat/    #   Minervini/SEPA: Trend Template, Stage, VCP, pivot
 │   ├── doc-bao-cao-tai-chinh/ #   Đọc sâu BCTC, soi chất lượng lợi nhuận
 │   ├── loc-co-phieu/          #   Phễu lọc ngành 30 → 10 → 3
@@ -82,6 +89,7 @@ stock-analysis/
 ├── tools/                     # Công cụ Python (độ chính xác Decimal)
 │   ├── fin_calc.py            #   DCF, owner earnings, biên an toàn, CAGR, ROIC…
 │   ├── data_fetch.py          #   Lấy giá & BCTC (vnstock / yfinance), đối chiếu chéo
+│   ├── cw_calc.py             #   Chứng quyền: hòa vốn, đòn bẩy hiệu dụng, IV, theta (Decimal + Black-Scholes)
 │   └── benford.py             #   Kiểm tra Định luật Benford — phát hiện số liệu bất thường
 ├── scripts/install.sh         # Cài skill vào ~/.claude/skills
 └── requirements.txt
