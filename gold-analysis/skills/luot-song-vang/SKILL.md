@@ -16,7 +16,7 @@ và chạy 23/24h — nhưng người mua **vàng vật chất VN chỉ có chi�
 > ⚡ Giới hạn **3–5 lượt tìm**. Nguồn nặng vĩ mô đã có sẵn trong `reports/vang.md`.
 
 ## Bước 0 — KẾ THỪA CHẾ ĐỘ (đọc trước, không chạy lại)
-Đọc `stock-analysis/reports/vang.md` — lấy lần chạy hội đồng gần nhất: CHẾ ĐỘ (cũ/mới/lai),
+Đọc `gold-analysis/reports/vang.md` — lấy lần chạy hội đồng gần nhất: CHẾ ĐỘ (cũ/mới/lai),
 bias, các mốc vô hiệu hoá, kế hoạch treo nếu có.
 - Log **≤7 ngày** và CHƯA có sự kiện lớn (CPI/FOMC/NFP) xảy ra từ đó → dùng nguyên bias.
 - Log cũ hơn / sự kiện lớn đã ra → làm tươi TỐI THIỂU (1–2 lượt tìm: sự kiện đó ra sao,
@@ -82,6 +82,6 @@ sắp ra → quyết trước tin. **Cấm bình quân giá xuống. Cấm dời
   cùng chiều = phóng to size trá hình.
 - **Vàng vật chất VN**: chỉ long; cộng premium + spread mua-bán vào bài toán R:R (premium
   phình ăn 3-5% là thường); kế hoạch tính trên XAU nhưng lệnh thật ở giá VN → kiểm cả hai.
-- Ghi mỗi lệnh (kể cả kế hoạch treo không kích hoạt) vào `stock-analysis/reports/vang.md`
+- Ghi mỗi lệnh (kể cả kế hoạch treo không kích hoạt) vào `gold-analysis/reports/vang.md`
   mục "Nhật ký lệnh" — sau 10 lệnh xem lại: setup nào ăn tiền, setup nào bào.
 - Kết thúc: "⚠️ Nghiên cứu học tập, không phải khuyến nghị đầu tư."

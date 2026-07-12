@@ -1,0 +1,7 @@
+# Rác hệ thống
+.DS_Store
+__pycache__/
+*.pyc
+
+# LƯU Ý: reports/vang.md ĐƯỢC theo dõi có chủ đích (nhật ký chế độ + nhật ký lệnh)
+# — khác với repo cổ phiếu (nơi reports là log runtime bị bỏ qua). Đừng ignore reports/.

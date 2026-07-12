@@ -135,6 +135,6 @@ net-long. Người mua biên = nhóm đang ĐẨY giá ở biên, không phải 
 - **Vàng VN**: luôn ghi premium SJC/nhẫn so quy đổi — premium phình có thể ăn hết lãi thế
   giới; vàng vật chất VN chịu thêm rủi ro chính sách NHNN + spread mua-bán rộng.
 - Hai khối (bias/setup) đọc riêng, ghép bằng ma trận. Mọi số có KỲ + nhãn A/B/C; không bịa.
-- Lưu vết `stock-analysis/reports/vang.md` — QUAN TRỌNG NHẤT là ghi CHẾ ĐỘ mỗi lần chạy;
+- Lưu vết `gold-analysis/reports/vang.md` — QUAN TRỌNG NHẤT là ghi CHẾ ĐỘ mỗi lần chạy;
   đổi chế độ giữa 2 lần chạy là tín hiệu lớn hơn mọi số lẻ.
 - Kết thúc: "⚠️ Nghiên cứu học tập, không phải khuyến nghị đầu tư."
