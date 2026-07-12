@@ -51,6 +51,7 @@ Mở Claude Code và gõ trực tiếp:
 /theo-doi-luan-diem VCB            # Theo dõi luận điểm sau khi đã mua
 /phan-bo-von 500 triệu, khẩu vị vừa # Thiết kế 3 túi vốn + liều lượng giải ngân
 /vi-mo                             # Bảng điều khiển vĩ mô VN + thế giới → regime + đèn 🟢🟡🔴
+/hoi-dong-vang                     # Hội đồng VÀNG: driver vĩ mô (real yield, Fed, DXY…) × kỹ thuật
 ```
 
 **Ba chế độ, không trộn lẫn:** framework phân biệt rõ *Đầu tư giá trị* (mua dưới nội tại,
@@ -85,7 +86,8 @@ stock-analysis/
 │   ├── checklist-dau-tu/      #   6 cổng kiểm tra kiểu Buffett
 │   ├── theo-doi-luan-diem/    #   Giám sát luận điểm đầu tư sau giải ngân
 │   ├── phan-bo-von/           #   3 túi vốn (Beta/Giá trị/GARP-Momentum) + position sizing
-│   └── vi-mo/                 #   Bảng điều khiển vĩ mô → regime chu kỳ + đèn tổng + xoay ngành
+│   ├── vi-mo/                 #   Bảng điều khiển vĩ mô → regime chu kỳ + đèn tổng + xoay ngành
+│   └── hoi-dong-vang/         #   Hội đồng VÀNG: 4 agent driver vĩ mô × kỹ thuật → bias + kế hoạch
 ├── tools/                     # Công cụ Python (độ chính xác Decimal)
 │   ├── fin_calc.py            #   DCF, owner earnings, biên an toàn, CAGR, ROIC…
 │   ├── data_fetch.py          #   Lấy giá & BCTC (vnstock / yfinance), đối chiếu chéo
