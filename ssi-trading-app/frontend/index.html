@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SSI · Bàn luận điểm</title>
+<style>
+  :root{--bg:#0f1420;--card:#182131;--mut:#8a97ab;--line:#26324a;--fg:#e8edf5;
+        --green:#2fbf71;--yellow:#e5b53a;--red:#e5484d;--blue:#4c8dff;--acc:#7aa2ff}
+  @media (prefers-color-scheme:light){:root{--bg:#f4f6fb;--card:#fff;--mut:#5b6675;
+        --line:#e2e8f2;--fg:#141a24}}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+  header{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  h1{font-size:18px;margin:0;font-weight:700}
+  .badge{font-size:12px;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+  .badge.live{color:var(--green);border-color:var(--green)}
+  .badge.mock{color:var(--yellow);border-color:var(--yellow)}
+  main{max-width:1100px;margin:0 auto;padding:22px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .sym{font-size:20px;font-weight:800;letter-spacing:.3px}
+  .title{color:var(--mut);font-size:13px;margin:2px 0 10px}
+  .tag{font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--mut)}
+  .tag.value{color:var(--blue);border-color:var(--blue)}
+  .tag.momentum{color:var(--acc);border-color:var(--acc)}
+  .tag.cw{color:var(--yellow);border-color:var(--yellow)}
+  .price{font-size:15px;font-weight:600}
+  .pnl{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:10px 0;font-size:13px}
+  .pnl .k{color:var(--mut)}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .pillars{display:flex;flex-direction:column;gap:5px;margin:10px 0}
+  .pill{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;cursor:pointer}
+  .dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex:0 0 auto;background:var(--mut)}
+  .dot.green{background:var(--green)}.dot.yellow{background:var(--yellow)}.dot.red{background:var(--red)}
+  .inv{color:var(--mut);font-style:italic}
+  .alerts{margin:8px 0;display:flex;flex-direction:column;gap:4px}
+  .alert{font-size:12px;padding:5px 8px;border-radius:7px;background:rgba(229,72,77,.12);border:1px solid var(--red)}
+  .alert.buy{background:rgba(47,191,113,.12);border-color:var(--green)}
+  .summary{font-size:12.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:9px;margin-top:9px}
+  form.trade{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  form.trade select,form.trade input{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px}
+  form.trade input{width:78px}
+  button{cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:7px;padding:6px 10px;font-size:12px}
+  button.go{border-color:var(--acc);color:var(--acc)}
+  .st{font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .st.open{color:var(--green)}.st.watch{color:var(--yellow)}.st.closed{color:var(--mut)}
+  .disc{color:var(--mut);font-size:11px;text-align:center;padding:18px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 Bàn luận điểm SSI</h1>
+  <span id="mode" class="badge">…</span>
+  <span class="badge">luận điểm → lệnh → P&amp;L theo luận điểm</span>
+  <span style="flex:1"></span>
+  <span id="clock" class="badge"></span>
+</header>
+<main>
+  <div id="grid" class="grid"></div>
+  <p class="disc">⚠️ Nghiên cứu học tập, không phải khuyến nghị đầu tư. GĐ1: dữ liệu chỉ đọc + lệnh giấy (paper).</p>
+</main>
+<script>
+const fmt = n => new Intl.NumberFormat('vi-VN').format(Math.round(Number(n)));
+const money = n => fmt(n) + 'đ';
+const cls = n => Number(n) > 0 ? 'pos' : (Number(n) < 0 ? 'neg' : '');
+const sign = n => (Number(n) > 0 ? '+' : '') + money(n);
+const NEXT = {none:'green', green:'yellow', yellow:'red', red:'none'};
+
+async function j(url, opts){ const r = await fetch(url, opts); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+async function loadHealth(){
+  const h = await j('/api/health');
+  const el = document.getElementById('mode');
+  el.textContent = h.mode === 'live' ? '🟢 LIVE (SSI)' : '🟡 MOCK (chưa cắm credential)';
+  el.className = 'badge ' + h.mode;
+}
+
+function pillarRow(th, p){
+  const d = document.createElement('div'); d.className='pill';
+  d.innerHTML = `<span class="dot ${p.status}"></span><span class="${p.is_invalidation?'inv':''}">${p.is_invalidation?'⚠️ ':''}${p.text}</span>`;
+  d.onclick = async () => {
+    await j(`/api/theses/${th.id}/pillars/${p.id}`, {method:'PATCH',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:NEXT[p.status]})});
+    render();
+  };
+  return d;
+}
+
+function card(th){
+  const c = document.createElement('div'); c.className='card';
+  const p = th.pnl;
+  c.innerHTML = `
+    <div class="row">
+      <div><span class="sym">${th.symbol}</span>
+        <span class="tag ${th.mode}">${th.mode}</span>
+        <span class="tag">hạng ${th.conviction}</span></div>
+      <div style="text-align:right">
+        <div class="st ${th.state}">${th.state}</div>
+        <div class="price">${money(p.last_price||0)}</div></div>
+    </div>
+    <div class="title">${th.title}</div>`;
+  if(th.pnl.net_qty > 0){
+    const pnl = document.createElement('div'); pnl.className='pnl';
+    pnl.innerHTML = `
+      <span class="k">Nắm giữ</span><span>${fmt(p.net_qty)} cp @ ${money(p.avg_cost)}</span>
+      <span class="k">Lãi tạm</span><span class="${cls(p.unrealized_pnl)}">${sign(p.unrealized_pnl)}</span>
+      <span class="k">Đã chốt</span><span class="${cls(p.realized_pnl)}">${sign(p.realized_pnl)}</span>
+      <span class="k">Tổng P&amp;L</span><span class="${cls(p.total_pnl)}">${sign(p.total_pnl)} (${p.return_pct}%)</span>`;
+    c.appendChild(pnl);
+  }
+  if(th.alerts.length){
+    const a = document.createElement('div'); a.className='alerts';
+    th.alerts.forEach(al=>{const e=document.createElement('div');
+      e.className='alert'+(al.msg.includes('vùng mua')||al.msg.includes('phá')?' buy':'');
+      e.textContent=`${al.msg} @ ${money(al.price)} — ${al.note}`; a.appendChild(e);});
+    c.appendChild(a);
+  }
+  const pl = document.createElement('div'); pl.className='pillars';
+  th.pillars.forEach(p=>pl.appendChild(pillarRow(th,p)));
+  c.appendChild(pl);
+
+  const f = document.createElement('form'); f.className='trade';
+  f.innerHTML = `<select name="side"><option value="buy">Mua</option><option value="sell">Bán</option></select>
+    <input name="quantity" type="number" placeholder="SL" min="100" step="100" required>
+    <input name="price" type="number" placeholder="Giá" min="1" required>
+    <button class="go" type="submit">+ Lệnh giấy</button>`;
+  f.onsubmit = async ev => {
+    ev.preventDefault(); const d=Object.fromEntries(new FormData(f));
+    await j(`/api/theses/${th.id}/trades`, {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({side:d.side, quantity:+d.quantity, price:d.price})});
+    f.reset(); render();
+  };
+  c.appendChild(f);
+  if(th.summary){const s=document.createElement('div');s.className='summary';s.textContent=th.summary;c.appendChild(s);}
+  return c;
+}
+
+async function render(){
+  const list = await j('/api/theses');
+  const g = document.getElementById('grid'); g.innerHTML='';
+  list.forEach(th=>g.appendChild(card(th)));
+}
+
+document.getElementById('clock').textContent = new Date().toLocaleTimeString('vi-VN');
+setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString('vi-VN'),1000);
+loadHealth();
+render();
+setInterval(render, 5000);   // cập nhật giá + P&L mỗi 5s
+</script>
+</body>
+</html>
