@@ -4,6 +4,8 @@ Web app đóng **vòng lặp đầu tư**: `luận điểm → lệnh → P&L TH
 luận điểm từ framework (`/hoi-dong-dau-tu`, `/hoi-dong-luot-song`…) với dữ liệu & giao
 dịch thật qua **SSI FastConnect** (`ssi-sdk`), để biết luận điểm nào *thực sự* kiếm tiền.
 
+![Dashboard bàn luận điểm](dashboard-preview.png)
+
 ## Chạy nhanh (chế độ MOCK — không cần credential)
 ```bash
 cd ssi-trading-app
