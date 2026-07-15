@@ -86,7 +86,8 @@ def check_levels(levels: list[Level], last_price: Decimal | None) -> list[dict]:
             hit = p <= price
             msg = "📥 Vào vùng mua" if hit else ""
         if hit:
-            out.append({"kind": lv.kind.value, "price": str(price), "note": lv.note, "msg": msg})
+            out.append({"level_id": lv.id, "kind": lv.kind.value,
+                        "price": str(price), "note": lv.note, "msg": msg})
     return out
 
 

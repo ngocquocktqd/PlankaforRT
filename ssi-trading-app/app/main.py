@@ -8,7 +8,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -19,6 +19,7 @@ from .db import get_session, init_db
 from .engine import thesis_snapshot
 from .importer import import_into_db, parse_thesis_markdown, scan_theses_dir
 from .market import market
+from .stream import broadcaster
 from .models import (
     Level, LevelKind, Pillar, PillarStatus, Side, Thesis, ThesisMode,
     ThesisState, Trade, TradeMode,
@@ -32,6 +33,12 @@ app = FastAPI(title="SSI Thesis Trading", version="0.1.0")
 @app.on_event("startup")
 def _startup() -> None:
     init_db()
+    broadcaster.start()
+
+
+@app.on_event("shutdown")
+async def _shutdown() -> None:
+    await broadcaster.stop()
 
 
 # ---------- Schemas vào ----------
@@ -201,6 +208,18 @@ def import_file(name: str, dry_run: bool = True,
 @app.get("/api/quote/{symbol}")
 def quote(symbol: str) -> dict:
     return market.quote(symbol)
+
+
+@app.websocket("/ws")
+async def ws_endpoint(ws: WebSocket) -> None:
+    """Đẩy realtime: {type:'quote', prices:{sym:price}} mỗi ~2s + {type:'alert', ...}
+    khi giá chạm mốc luận điểm (chống spam: re-arm sau khi giá rời mốc ≥1,5%)."""
+    await broadcaster.connect(ws)
+    try:
+        while True:
+            await ws.receive_text()  # giữ kết nối; client không cần gửi gì
+    except WebSocketDisconnect:
+        broadcaster.disconnect(ws)
 
 
 # ---------- Frontend ----------

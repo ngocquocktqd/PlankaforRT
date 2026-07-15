@@ -35,7 +35,8 @@ app/
 ├── engine.py    # VỊ THẾ + P&L theo luận điểm (Decimal, giá vốn bình quân) + cảnh báo mốc
 ├── db.py        # SQLite
 ├── importer.py  # parse luận điểm markdown (format /theo-doi-luan-diem) → Thesis+Pillar+Level
-└── main.py      # FastAPI REST + phục vụ dashboard
+├── stream.py    # realtime: vòng tick 2s đẩy giá + cảnh báo mốc qua WebSocket (re-arm 1,5%)
+└── main.py      # FastAPI REST + WS /ws + phục vụ dashboard
 frontend/index.html   # dashboard 1 trang (theme-aware): thẻ luận điểm, P&L live, đổi trạng thái trụ, thêm lệnh giấy
 scripts/seed.py       # nạp DBC + PVD từ phân tích thật
 ```
@@ -51,6 +52,13 @@ POST /api/import/markdown                # dán markdown trực tiếp {markdown
 Parser đọc đúng format do skill `/theo-doi-luan-diem` sinh: trụ cột 🟢🟡🔴⚪ + điều kiện
 vô hiệu hoá + mốc giá (tích luỹ/mua hời/pivot/stop). Không chắc trường nào → bỏ trống,
 không đoán bừa; luôn preview trước khi ghi.
+
+## Realtime (WebSocket `/ws`)
+- Server tick ~2s (chỉ khi có client xem): đẩy `{type:"quote", prices:{sym:price}}` cho mọi
+  mã đang có luận điểm mở — dashboard nhảy giá + P&L **tại chỗ**, không reload.
+- Giá chạm mốc luận điểm (vùng mua/stop/pivot/target) → `{type:"alert", ...}`: toast +
+  thẻ nháy vàng. Chống spam: mỗi mốc chỉ báo lại sau khi giá rời xa ≥1,5% (re-arm).
+- MOCK và LIVE dùng chung đường ống; WS rớt tự reconnect (backoff), fallback poll 30s.
 
 ## Nguyên tắc
 - **Tiền dùng `Decimal`** (no float) — nhất quán với `stock-analysis/tools`.

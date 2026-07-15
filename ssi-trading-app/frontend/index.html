@@ -47,6 +47,15 @@
   .st{font-size:11px;text-transform:uppercase;letter-spacing:.5px}
   .st.open{color:var(--green)}.st.watch{color:var(--yellow)}.st.closed{color:var(--mut)}
   .disc{color:var(--mut);font-size:11px;text-align:center;padding:18px}
+  /* realtime */
+  .price.tick{animation:tickA .5s}
+  @keyframes tickA{0%{opacity:.35}100%{opacity:1}}
+  .card.flash{animation:flashA 1.2s}
+  @keyframes flashA{0%{box-shadow:0 0 0 2px var(--yellow)}100%{box-shadow:none}}
+  #toasts{position:fixed;right:14px;bottom:14px;display:flex;flex-direction:column;gap:8px;z-index:9}
+  .toast{background:var(--card);border:1px solid var(--yellow);border-radius:9px;padding:10px 13px;
+         font-size:12.5px;max-width:340px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .toast.buy{border-color:var(--green)}
 </style>
 </head>
 <body>
@@ -62,6 +71,7 @@
   <div id="grid" class="grid"></div>
   <p class="disc">⚠️ Nghiên cứu học tập, không phải khuyến nghị đầu tư. GĐ1: dữ liệu chỉ đọc + lệnh giấy (paper).</p>
 </main>
+<div id="toasts"></div>
 <script>
 const fmt = n => new Intl.NumberFormat('vi-VN').format(Math.round(Number(n)));
 const money = n => fmt(n) + 'đ';
@@ -121,16 +131,19 @@ function card(th){
         <span class="tag">hạng ${th.conviction}</span></div>
       <div style="text-align:right">
         <div class="st ${th.state}">${th.state}</div>
-        <div class="price">${money(p.last_price||0)}</div></div>
+        <div class="price" data-price="${th.symbol}">${money(p.last_price||0)}</div></div>
     </div>
     <div class="title">${th.title}</div>`;
+  c.dataset.sym = th.symbol;
   if(th.pnl.net_qty > 0){
     const pnl = document.createElement('div'); pnl.className='pnl';
+    pnl.dataset.qty = p.net_qty; pnl.dataset.avg = p.avg_cost;
+    pnl.dataset.realized = p.realized_pnl; pnl.dataset.sym = th.symbol;
     pnl.innerHTML = `
       <span class="k">Nắm giữ</span><span>${fmt(p.net_qty)} cp @ ${money(p.avg_cost)}</span>
-      <span class="k">Lãi tạm</span><span class="${cls(p.unrealized_pnl)}">${sign(p.unrealized_pnl)}</span>
+      <span class="k">Lãi tạm</span><span data-unrl class="${cls(p.unrealized_pnl)}">${sign(p.unrealized_pnl)}</span>
       <span class="k">Đã chốt</span><span class="${cls(p.realized_pnl)}">${sign(p.realized_pnl)}</span>
-      <span class="k">Tổng P&amp;L</span><span class="${cls(p.total_pnl)}">${sign(p.total_pnl)} (${p.return_pct}%)</span>`;
+      <span class="k">Tổng P&amp;L</span><span data-total class="${cls(p.total_pnl)}">${sign(p.total_pnl)} (${p.return_pct}%)</span>`;
     c.appendChild(pnl);
   }
   if(th.alerts.length){
@@ -169,9 +182,54 @@ async function render(){
 
 document.getElementById('clock').textContent = new Date().toLocaleTimeString('vi-VN');
 setInterval(()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString('vi-VN'),1000);
+
+// ---- Realtime qua WebSocket: giá nhảy tại chỗ + toast cảnh báo mốc ----
+function toast(text, buy){
+  const t = document.createElement('div');
+  t.className = 'toast' + (buy ? ' buy' : '');
+  t.textContent = text;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 8000);
+}
+
+function applyQuotes(prices){
+  for(const [sym, price] of Object.entries(prices)){
+    document.querySelectorAll(`[data-price="${sym}"]`).forEach(el=>{
+      const old = el.textContent; el.textContent = money(price);
+      if(old !== el.textContent){ el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick'); }
+    });
+    document.querySelectorAll(`.pnl[data-sym="${sym}"]`).forEach(el=>{
+      const qty = Number(el.dataset.qty), avg = Number(el.dataset.avg), rl = Number(el.dataset.realized);
+      const unrl = (Number(price) - avg) * qty, total = unrl + rl;
+      const u = el.querySelector('[data-unrl]'), t = el.querySelector('[data-total]');
+      if(u){ u.textContent = sign(unrl); u.className = cls(unrl); }
+      if(t){ t.textContent = sign(total); t.className = cls(total); }
+    });
+  }
+}
+
+let wsRetry = 1000;
+function connectWS(){
+  const ws = new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');
+  ws.onopen = () => { wsRetry = 1000; };
+  ws.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if(m.type === 'quote') applyQuotes(m.prices);
+    if(m.type === 'alert'){
+      const buy = /vùng mua|phá điểm vào|mục tiêu/i.test(m.msg);
+      toast(`${m.symbol}: ${m.msg} — mốc ${money(m.level_price)}, giá ${money(m.price)}`, buy);
+      const card = document.querySelector(`.card[data-sym="${m.symbol}"]`);
+      if(card){ card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); }
+      render(); // đồng bộ lại danh sách cảnh báo trong thẻ
+    }
+  };
+  ws.onclose = () => setTimeout(connectWS, Math.min(wsRetry *= 2, 15000));
+}
+
 loadHealth();
 render();
-setInterval(render, 5000);   // cập nhật giá + P&L mỗi 5s
+connectWS();
+setInterval(render, 30000);  // fallback khi WS rớt; giá sống đã có WS lo
 </script>
 </body>
 </html>
