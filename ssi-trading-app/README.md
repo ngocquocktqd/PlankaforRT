@@ -34,10 +34,23 @@ app/
 ├── market.py    # giá: LIVE qua ssi-sdk get_ohlc_1day, fallback MOCK
 ├── engine.py    # VỊ THẾ + P&L theo luận điểm (Decimal, giá vốn bình quân) + cảnh báo mốc
 ├── db.py        # SQLite
+├── importer.py  # parse luận điểm markdown (format /theo-doi-luan-diem) → Thesis+Pillar+Level
 └── main.py      # FastAPI REST + phục vụ dashboard
 frontend/index.html   # dashboard 1 trang (theme-aware): thẻ luận điểm, P&L live, đổi trạng thái trụ, thêm lệnh giấy
 scripts/seed.py       # nạp DBC + PVD từ phân tích thật
 ```
+
+## Import luận điểm từ framework (đóng vòng chat → app)
+Nút **📥 Import luận điểm** trên dashboard (hoặc API):
+```
+GET  /api/import/scan                    # liệt kê file trong stock-analysis/reports/theses/
+POST /api/import/file/DBC.md?dry_run=true    # preview — KHÔNG ghi DB (mặc định)
+POST /api/import/file/DBC.md?dry_run=false   # ghi thật (chặn 409 nếu mã đã có luận điểm mở)
+POST /api/import/markdown                # dán markdown trực tiếp {markdown, symbol_hint, dry_run}
+```
+Parser đọc đúng format do skill `/theo-doi-luan-diem` sinh: trụ cột 🟢🟡🔴⚪ + điều kiện
+vô hiệu hoá + mốc giá (tích luỹ/mua hời/pivot/stop). Không chắc trường nào → bỏ trống,
+không đoán bừa; luôn preview trước khi ghi.
 
 ## Nguyên tắc
 - **Tiền dùng `Decimal`** (no float) — nhất quán với `stock-analysis/tools`.

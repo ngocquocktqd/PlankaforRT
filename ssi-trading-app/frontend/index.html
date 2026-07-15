@@ -55,6 +55,7 @@
   <span id="mode" class="badge">…</span>
   <span class="badge">luận điểm → lệnh → P&amp;L theo luận điểm</span>
   <span style="flex:1"></span>
+  <button id="importBtn" title="Import luận điểm từ stock-analysis/reports/theses/">📥 Import luận điểm</button>
   <span id="clock" class="badge"></span>
 </header>
 <main>
@@ -69,6 +70,28 @@ const sign = n => (Number(n) > 0 ? '+' : '') + money(n);
 const NEXT = {none:'green', green:'yellow', yellow:'red', red:'none'};
 
 async function j(url, opts){ const r = await fetch(url, opts); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+// Import luận điểm: scan thư mục theses → preview (dry-run) → xác nhận → ghi thật
+async function importTheses(){
+  try{
+    const {files} = await j('/api/import/scan');
+    if(!files.length){ alert('Không thấy file nào trong stock-analysis/reports/theses/'); return; }
+    for(const f of files){
+      const prev = await j(`/api/import/file/${encodeURIComponent(f.name)}?dry_run=true`, {method:'POST'});
+      const p = prev.preview;
+      const msg = `${f.name} → ${p.symbol} (${p.mode}, hạng ${p.conviction})\n`
+        + `Trụ cột: ${p.pillars.length} · Mốc giá: ${p.levels.map(l=>l.kind+' '+fmt(l.price)).join(', ') || '—'}\n`
+        + (p.warnings.length ? '⚠️ ' + p.warnings.join('; ') + '\n' : '')
+        + `\nImport vào bàn theo dõi?`;
+      if(!confirm(msg)) continue;
+      try{
+        await j(`/api/import/file/${encodeURIComponent(f.name)}?dry_run=false`, {method:'POST'});
+      }catch(e){ alert('Bỏ qua ' + f.name + ': ' + e.message); }
+    }
+    render();
+  }catch(e){ alert('Import lỗi: ' + e.message); }
+}
+document.getElementById('importBtn').onclick = importTheses;
 
 async function loadHealth(){
   const h = await j('/api/health');

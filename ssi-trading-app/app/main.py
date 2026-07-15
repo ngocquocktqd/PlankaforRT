@@ -17,6 +17,7 @@ from sqlmodel import Session, select
 from .config import settings
 from .db import get_session, init_db
 from .engine import thesis_snapshot
+from .importer import import_into_db, parse_thesis_markdown, scan_theses_dir
 from .market import market
 from .models import (
     Level, LevelKind, Pillar, PillarStatus, Side, Thesis, ThesisMode,
@@ -142,6 +143,57 @@ def add_trade(thesis_id: int, body: TradeIn,
     session.commit()
     session.refresh(th)
     return thesis_snapshot(th, market.last_price(th.symbol))
+
+
+# ---------- Import luận điểm từ framework markdown ----------
+
+class ImportIn(BaseModel):
+    markdown: str
+    symbol_hint: str = ""
+    dry_run: bool = True   # mặc định chỉ PREVIEW — ghi DB phải chủ động tắt
+
+
+@app.post("/api/import/markdown")
+def import_markdown(body: ImportIn, session: Session = Depends(get_session)) -> dict:
+    """Parse 1 file luận điểm markdown (format /theo-doi-luan-diem).
+
+    dry_run=True (mặc định): trả preview những gì sẽ ghi, KHÔNG đụng DB.
+    dry_run=False: ghi thật (từ chối nếu mã đã có luận điểm đang mở).
+    """
+    parsed = parse_thesis_markdown(body.markdown, body.symbol_hint)
+    preview = {
+        "symbol": parsed.symbol, "title": parsed.title, "mode": parsed.mode,
+        "conviction": parsed.conviction, "summary": parsed.summary,
+        "pillars": parsed.pillars,
+        "levels": [{**lv, "price": str(lv["price"])} for lv in parsed.levels],
+        "warnings": parsed.warnings,
+    }
+    if body.dry_run:
+        return {"dry_run": True, "preview": preview}
+    result = import_into_db(parsed, session)
+    if "error" in result:
+        raise HTTPException(status_code=409, detail=result["error"])
+    return {"dry_run": False, "imported": result, "preview": preview}
+
+
+@app.get("/api/import/scan")
+def import_scan() -> dict:
+    """Liệt kê file luận điểm tìm thấy trong stock-analysis/reports/theses/."""
+    files = scan_theses_dir()
+    return {"files": [{"name": f.name, "path": str(f),
+                       "symbol_hint": f.stem.upper()} for f in files]}
+
+
+@app.post("/api/import/file/{name}")
+def import_file(name: str, dry_run: bool = True,
+                session: Session = Depends(get_session)) -> dict:
+    """Import 1 file theo tên từ thư mục theses (vd DBC.md)."""
+    match = next((f for f in scan_theses_dir() if f.name == name), None)
+    if match is None:
+        raise HTTPException(status_code=404, detail=f"Không thấy {name} trong theses/")
+    body = ImportIn(markdown=match.read_text(encoding="utf-8"),
+                    symbol_hint=match.stem, dry_run=dry_run)
+    return import_markdown(body, session)
 
 
 # ---------- Giá ----------
