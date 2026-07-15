@@ -53,6 +53,14 @@ Parser đọc đúng format do skill `/theo-doi-luan-diem` sinh: trụ cột �
 vô hiệu hoá + mốc giá (tích luỹ/mua hời/pivot/stop). Không chắc trường nào → bỏ trống,
 không đoán bừa; luôn preview trước khi ghi.
 
+## Sổ lệnh, R:R & hiệu suất
+- **R:R trên thẻ luận điểm**: kế hoạch `(target−entry)/(entry−stop)` từ Levels + **R hiện tại**
+  của vị thế mở `(giá−giá vốn)/(giá vốn−stop)` — biết đang lời/lỗ bao nhiêu "R" so rủi ro chấp nhận.
+- **📒 Sổ lệnh** (`GET /api/trades`): mọi lệnh mới nhất trước; **ghi chú sửa được** ngay trên
+  bảng (`PATCH /api/trades/{id}`) — nhật ký vì sao vào/ra, nguyên liệu để review kỷ luật.
+- **Thống kê** (`GET /api/stats`): tổng P&L (chốt + tạm), phí, **win rate tính trên luận điểm
+  đã có lãi/lỗ chốt** (không tô vẽ khi dữ liệu ít), gộp theo mode, xếp hạng từng luận điểm.
+
 ## Realtime (WebSocket `/ws`)
 - Server tick ~2s (chỉ khi có client xem): đẩy `{type:"quote", prices:{sym:price}}` cho mọi
   mã đang có luận điểm mở — dashboard nhảy giá + P&L **tại chỗ**, không reload.

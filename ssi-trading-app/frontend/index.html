@@ -47,6 +47,21 @@
   .st{font-size:11px;text-transform:uppercase;letter-spacing:.5px}
   .st.open{color:var(--green)}.st.watch{color:var(--yellow)}.st.closed{color:var(--mut)}
   .disc{color:var(--mut);font-size:11px;text-align:center;padding:18px}
+  /* R:R + hiệu suất + sổ lệnh */
+  .rr{font-size:12px;color:var(--mut);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  .rr b{color:var(--fg)}
+  #perf{margin-top:26px}
+  #perf h2{font-size:15px;margin:0 0 10px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .tile .tl{font-size:11px;color:var(--mut);margin-bottom:4px}
+  .tile .tv{font-size:15px;font-weight:600}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  #blotter{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--card)}
+  #blotter th,#blotter td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  #blotter th{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
+  #blotter td.note{white-space:normal;min-width:180px;cursor:pointer}
+  .hint{color:var(--mut);font-size:11px;font-weight:400}
   /* realtime */
   .price.tick{animation:tickA .5s}
   @keyframes tickA{0%{opacity:.35}100%{opacity:1}}
@@ -69,6 +84,17 @@
 </header>
 <main>
   <div id="grid" class="grid"></div>
+
+  <section id="perf">
+    <h2>📒 Hiệu suất &amp; sổ lệnh</h2>
+    <div id="tiles" class="tiles"></div>
+    <div class="tablewrap"><table id="blotter">
+      <thead><tr><th>Thời gian</th><th>Mã</th><th>Lệnh</th><th>SL</th><th>Giá</th>
+        <th>Giá trị</th><th>Phí</th><th>Ghi chú <span class="hint">(bấm để sửa)</span></th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
   <p class="disc">⚠️ Nghiên cứu học tập, không phải khuyến nghị đầu tư. GĐ1: dữ liệu chỉ đọc + lệnh giấy (paper).</p>
 </main>
 <div id="toasts"></div>
@@ -146,6 +172,14 @@ function card(th){
       <span class="k">Tổng P&amp;L</span><span data-total class="${cls(p.total_pnl)}">${sign(p.total_pnl)} (${p.return_pct}%)</span>`;
     c.appendChild(pnl);
   }
+  if(th.rr){
+    const rr = document.createElement('div'); rr.className='rr';
+    const bits = [];
+    if(th.rr.plan_rr) bits.push(`R:R kế hoạch <b>${th.rr.plan_rr}:1</b>${th.rr.plan_rr_t2?` (T2 ${th.rr.plan_rr_t2}:1)`:''}`);
+    if(th.rr.current_r) bits.push(`đang <b class="${cls(th.rr.current_r)}">${Number(th.rr.current_r)>0?'+':''}${th.rr.current_r}R</b> (rủi ro ${money(th.rr.risk_per_share)}/cp)`);
+    rr.innerHTML = '⚖️ ' + bits.join(' · ');
+    c.appendChild(rr);
+  }
   if(th.alerts.length){
     const a = document.createElement('div'); a.className='alerts';
     th.alerts.forEach(al=>{const e=document.createElement('div');
@@ -174,10 +208,57 @@ function card(th){
   return c;
 }
 
+function tile(label, value, colored){
+  const d = document.createElement('div'); d.className='tile';
+  d.innerHTML = `<div class="tl">${label}</div><div class="tv ${colored?cls(value):''}">${typeof value==='string'&&isNaN(value)?value:sign(value)}</div>`;
+  return d;
+}
+
+async function renderPerf(){
+  const [st, trades] = await Promise.all([j('/api/stats'), j('/api/trades')]);
+  const tiles = document.getElementById('tiles'); tiles.innerHTML='';
+  tiles.appendChild(tile('Tổng P&L', st.total_pnl, true));
+  tiles.appendChild(tile('Đã chốt', st.totals.realized, true));
+  tiles.appendChild(tile('Lãi tạm', st.totals.unrealized, true));
+  const wr = document.createElement('div'); wr.className='tile';
+  wr.innerHTML = `<div class="tl">Win rate (đã chốt)</div><div class="tv">${st.win_rate ? st.win_rate+' — '+st.win_rate_pct+'%' : 'chưa có lệnh chốt'}</div>`;
+  tiles.appendChild(wr);
+  const fee = document.createElement('div'); fee.className='tile';
+  fee.innerHTML = `<div class="tl">Phí · Số lệnh</div><div class="tv">${money(st.totals.fees)} · ${st.totals.n_trades}</div>`;
+  tiles.appendChild(fee);
+  for(const [m, v] of Object.entries(st.by_mode)){
+    if(!v.n) continue;
+    const t = document.createElement('div'); t.className='tile';
+    const tot = Number(v.realized)+Number(v.unrealized);
+    t.innerHTML = `<div class="tl">${m} (${v.n} luận điểm)</div><div class="tv ${cls(tot)}">${sign(tot)}</div>`;
+    tiles.appendChild(t);
+  }
+
+  const tb = document.querySelector('#blotter tbody'); tb.innerHTML='';
+  for(const t of trades){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.executed_at.replace('T',' ')}</td>
+      <td><b>${t.symbol}</b> <span class="tag ${t.thesis_mode||''}">${t.thesis_mode||''}</span></td>
+      <td class="${t.side==='buy'?'pos':'neg'}">${t.side==='buy'?'MUA':'BÁN'}${t.mode==='paper'?' 📝':''}</td>
+      <td>${fmt(t.quantity)}</td><td>${money(t.price)}</td><td>${money(t.value)}</td><td>${money(t.fee)}</td>
+      <td class="note" data-id="${t.id}">${t.note || '<span class="hint">+ ghi chú</span>'}</td>`;
+    tr.querySelector('.note').onclick = async ev => {
+      const cur = t.note || '';
+      const nn = prompt(`Ghi chú lệnh ${t.side.toUpperCase()} ${t.symbol} (vì sao vào/ra?):`, cur);
+      if(nn === null || nn === cur) return;
+      await j(`/api/trades/${t.id}`, {method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({note: nn})});
+      renderPerf();
+    };
+    tb.appendChild(tr);
+  }
+}
+
 async function render(){
   const list = await j('/api/theses');
   const g = document.getElementById('grid'); g.innerHTML='';
   list.forEach(th=>g.appendChild(card(th)));
+  renderPerf();
 }
 
 document.getElementById('clock').textContent = new Date().toLocaleTimeString('vi-VN');

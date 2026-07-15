@@ -16,7 +16,7 @@ from sqlmodel import Session, select
 
 from .config import settings
 from .db import get_session, init_db
-from .engine import thesis_snapshot
+from .engine import performance_stats, thesis_snapshot
 from .importer import import_into_db, parse_thesis_markdown, scan_theses_dir
 from .market import market
 from .stream import broadcaster
@@ -150,6 +150,54 @@ def add_trade(thesis_id: int, body: TradeIn,
     session.commit()
     session.refresh(th)
     return thesis_snapshot(th, market.last_price(th.symbol))
+
+
+# ---------- Sổ lệnh & hiệu suất ----------
+
+class TradeNotePatch(BaseModel):
+    note: str
+
+
+@app.get("/api/trades")
+def trade_blotter(session: Session = Depends(get_session)) -> list[dict]:
+    """Lịch sử lệnh toàn sổ, mới nhất trước."""
+    trades = session.exec(select(Trade)).all()
+    thesis_map = {t.id: t for t in session.exec(select(Thesis)).all()}
+    out = []
+    for t in sorted(trades, key=lambda x: (x.executed_at, x.id or 0), reverse=True):
+        th = thesis_map.get(t.thesis_id)
+        out.append({
+            "id": t.id, "thesis_id": t.thesis_id,
+            "symbol": t.symbol, "thesis_mode": th.mode.value if th else None,
+            "side": t.side.value, "quantity": t.quantity,
+            "price": str(t.price), "fee": str(t.fee),
+            "value": str((t.price * t.quantity).quantize(Decimal("1"))),
+            "mode": t.mode.value, "note": t.note,
+            "executed_at": t.executed_at.isoformat(timespec="seconds"),
+        })
+    return out
+
+
+@app.patch("/api/trades/{trade_id}")
+def patch_trade_note(trade_id: int, body: TradeNotePatch,
+                     session: Session = Depends(get_session)) -> dict:
+    """Sửa ghi chú của một lệnh (nhật ký giao dịch — vì sao vào/ra)."""
+    t = session.get(Trade, trade_id)
+    if t is None:
+        raise HTTPException(status_code=404, detail="Không thấy lệnh")
+    t.note = body.note[:500]
+    session.add(t)
+    session.commit()
+    return {"id": t.id, "note": t.note}
+
+
+@app.get("/api/stats")
+def stats(session: Session = Depends(get_session)) -> dict:
+    """Thống kê hiệu suất: tổng P&L, win rate (trên luận điểm đã chốt lãi/lỗ),
+    theo mode, xếp hạng từng luận điểm."""
+    theses = session.exec(select(Thesis)).all()
+    rows = [(th, market.last_price(th.symbol) if th.trades else None) for th in theses]
+    return performance_stats(rows)
 
 
 # ---------- Import luận điểm từ framework markdown ----------
