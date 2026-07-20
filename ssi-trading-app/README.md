@@ -86,6 +86,24 @@ vào ghi chú — nhật ký kỷ luật không nói dối. NAV + risk% chỉnh 
   thẻ nháy vàng. Chống spam: mỗi mốc chỉ báo lại sau khi giá rời xa ≥1,5% (re-arm).
 - MOCK và LIVE dùng chung đường ống; WS rớt tự reconnect (backoff), fallback poll 30s.
 
+## Backtest chân cơ học (`backtest/` + `scripts/backtest.py`)
+Backtest **CHỈ phần máy móc hoá được** của framework — Trend Template + breakout nền
+(vol ≥1,5× TB50) + bộ lọc thị trường (index > MA200) + stop 7%/hoà vốn +1R/trailing
+MA20/gãy MA50/time-stop 120 phiên + sizing rủi ro 1% equity, trần 15%, tối đa 5 vị thế.
+Vào lệnh Ở PHIÊN SAU tín hiệu (không look-ahead), phí 0,15% + trượt 0,1%/chiều, gap qua
+stop khớp tại giá mở (lỗ >1R như đời thật).
+```bash
+# máy local (cần credential SSI_* — sandbox bị chặn mạng):
+python -m scripts.backtest fetch --symbols vn30 --from 2019-01-01 --csv-dir data/ohlc
+python -m scripts.backtest run --csv-dir data/ohlc --json-out kq.json
+```
+Đầu ra: số lệnh, win rate, **avg R (expectancy)**, profit factor, CAGR, max drawdown,
+so buy-hold VN-Index, đếm lý do thoát. **Mọi báo cáo in kèm GIỚI HẠN bắt buộc đọc**:
+không có chân O'Neil (earnings) + phán đoán hội đồng → kết quả là cận trên lạc quan
+của riêng chân kỹ thuật; survivorship bias; <30 lệnh đừng kết luận. Đã test 5 kịch bản
+tổng hợp (thắng trail +1,96R · gãy MA50 thoát sớm −0,49R · gap stop −2,67R · index
+nghịch chặn vào lệnh · thiếu index cảnh báo).
+
 ## Nguyên tắc
 - **Tiền dùng `Decimal`** (no float) — nhất quán với `stock-analysis/tools`.
 - **Trading thật là hành động không undo** → mặc định tắt, sau nút xác nhận + dry-run.
