@@ -56,6 +56,9 @@
   .tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
   .tile .tl{font-size:11px;color:var(--mut);margin-bottom:4px}
   .tile .tv{font-size:15px;font-weight:600}
+  .equity{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:14px}
+  .eqhead{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:12px;margin-bottom:6px}
+  #eqChart{width:100%;height:150px;display:block}
   .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
   #blotter{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--card)}
   #blotter th,#blotter td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -79,6 +82,7 @@
   <span id="mode" class="badge">…</span>
   <span class="badge">luận điểm → lệnh → P&amp;L theo luận điểm</span>
   <span style="flex:1"></span>
+  <span id="nav" class="badge" title="Bấm để đổi NAV (tổng vốn) — luật size tính trên số này" style="cursor:pointer">NAV: …</span>
   <button id="importBtn" title="Import luận điểm từ stock-analysis/reports/theses/">📥 Import luận điểm</button>
   <span id="clock" class="badge"></span>
 </header>
@@ -88,6 +92,13 @@
   <section id="perf">
     <h2>📒 Hiệu suất &amp; sổ lệnh</h2>
     <div id="tiles" class="tiles"></div>
+    <div id="equityBox" class="equity" hidden>
+      <div class="eqhead">
+        <span>📈 Equity curve <span class="hint">(xanh: sổ của bạn · xám: nếu chỉ mua VN-Index)</span></span>
+        <span id="eqStats"></span>
+      </div>
+      <svg id="eqChart" viewBox="0 0 720 180" preserveAspectRatio="none"></svg>
+    </div>
     <div class="tablewrap"><table id="blotter">
       <thead><tr><th>Thời gian</th><th>Mã</th><th>Lệnh</th><th>SL</th><th>Giá</th>
         <th>Giá trị</th><th>Phí</th><th>Ghi chú <span class="hint">(bấm để sửa)</span></th></tr></thead>
@@ -198,9 +209,23 @@ function card(th){
     <button class="go" type="submit">+ Lệnh giấy</button>`;
   f.onsubmit = async ev => {
     ev.preventDefault(); const d=Object.fromEntries(new FormData(f));
-    await j(`/api/theses/${th.id}/trades`, {method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({side:d.side, quantity:+d.quantity, price:d.price})});
+    const payload = {side:d.side, quantity:+d.quantity, price:d.price};
+    try{
+      await j(`/api/theses/${th.id}/trades`, {method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    }catch(e){
+      // van an toàn size trả 422 kèm chi tiết → hỏi có cố tình vượt không
+      let chk = null;
+      try{ chk = JSON.parse(e.message).detail.size_check; }catch(_){}
+      if(chk && chk.violations){
+        const ok = confirm('🛑 VAN AN TOÀN SIZE:\n\n' + chk.violations.join('\n')
+          + '\n\nVẫn đặt lệnh? (sẽ bị đóng dấu "VƯỢT LUẬT SIZE" vào sổ)');
+        if(!ok) return;
+        await j(`/api/theses/${th.id}/trades`, {method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({...payload, force:true})});
+      } else { alert('Lỗi: ' + e.message); return; }
+    }
     f.reset(); render();
   };
   c.appendChild(f);
@@ -214,9 +239,51 @@ function tile(label, value, colored){
   return d;
 }
 
+async function loadNav(){
+  const s = await j('/api/settings');
+  const el = document.getElementById('nav');
+  el.textContent = 'NAV: ' + money(s.nav) + ' · risk ' + (Number(s.risk_pct)*100).toFixed(1) + '%/lệnh';
+  el.onclick = async () => {
+    const nv = prompt('NAV (tổng vốn, đồng) — luật size & equity tính trên số này:', s.nav);
+    if(nv === null || nv === s.nav) return;
+    await j('/api/settings', {method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({nav: nv})});
+    loadNav(); renderPerf();
+  };
+}
+
+function drawEquity(eq){
+  const box = document.getElementById('equityBox');
+  if(!eq.series || eq.series.length < 2){ box.hidden = true; return; }
+  box.hidden = false;
+  const W=720, H=180, P=6;
+  const vals = [];
+  eq.series.forEach(p=>{ vals.push(Number(p.equity)); if(p.benchmark) vals.push(Number(p.benchmark)); });
+  const mn = Math.min(...vals), mx = Math.max(...vals), span = (mx-mn)||1;
+  const x = i => P + i*(W-2*P)/(eq.series.length-1);
+  const y = v => H-P - (v-mn)*(H-2*P)/span;
+  const line = key => eq.series.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(Number(p[key])).toFixed(1)).join(' ');
+  let svg = '';
+  if(eq.series[0].benchmark)
+    svg += `<path d="${line('benchmark')}" fill="none" stroke="var(--mut)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  svg += `<path d="${line('equity')}" fill="none" stroke="var(--green)" stroke-width="2"/>`;
+  document.getElementById('eqChart').innerHTML = svg;
+  const last = eq.series[eq.series.length-1];
+  document.getElementById('eqStats').innerHTML =
+    `Max drawdown: <b class="${Number(eq.max_drawdown_pct)<0?'neg':''}">${eq.max_drawdown_pct}%</b>`
+    + (eq.vs_index_pct !== null ? ` · vs VN-Index: <b class="${cls(eq.vs_index_pct)}">${Number(eq.vs_index_pct)>0?'+':''}${eq.vs_index_pct}%</b>` : '')
+    + ` · DD hiện tại: ${last.drawdown_pct}%`;
+}
+
 async function renderPerf(){
-  const [st, trades] = await Promise.all([j('/api/stats'), j('/api/trades')]);
+  const [st, trades, eq] = await Promise.all([j('/api/stats'), j('/api/trades'), j('/api/equity')]);
+  drawEquity(eq);
   const tiles = document.getElementById('tiles'); tiles.innerHTML='';
+  if(eq.max_drawdown_pct && eq.series.length >= 2){
+    const dd = document.createElement('div'); dd.className='tile';
+    dd.innerHTML = `<div class="tl">Max drawdown</div><div class="tv ${Number(eq.max_drawdown_pct)<0?'neg':''}">${eq.max_drawdown_pct}%</div>`;
+    tiles.appendChild(dd);
+  }
   tiles.appendChild(tile('Tổng P&L', st.total_pnl, true));
   tiles.appendChild(tile('Đã chốt', st.totals.realized, true));
   tiles.appendChild(tile('Lãi tạm', st.totals.unrealized, true));
@@ -308,6 +375,7 @@ function connectWS(){
 }
 
 loadHealth();
+loadNav();
 render();
 connectWS();
 setInterval(render, 30000);  // fallback khi WS rớt; giá sống đã có WS lo

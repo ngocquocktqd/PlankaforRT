@@ -16,13 +16,14 @@ from sqlmodel import Session, select
 
 from .config import settings
 from .db import get_session, init_db
-from .engine import performance_stats, thesis_snapshot
+from .engine import (equity_series, performance_stats, position_and_pnl,
+                     size_check, thesis_snapshot)
 from .importer import import_into_db, parse_thesis_markdown, scan_theses_dir
 from .market import market
 from .stream import broadcaster
 from .models import (
-    Level, LevelKind, Pillar, PillarStatus, Side, Thesis, ThesisMode,
-    ThesisState, Trade, TradeMode,
+    EquitySnapshot, Level, LevelKind, Pillar, PillarStatus, Setting, Side,
+    Thesis, ThesisMode, ThesisState, Trade, TradeMode,
 )
 
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
@@ -57,6 +58,40 @@ class TradeIn(BaseModel):
     price: Decimal
     fee: Decimal = Decimal("0")
     note: str = ""
+    force: bool = False   # vượt van an toàn size — bị đóng dấu vào ghi chú lệnh
+
+
+# ---------- Settings (NAV + luật size) ----------
+
+_SETTING_DEFAULTS = {"nav": "500000000", "risk_pct": "0.015"}
+
+
+def get_setting(session: Session, key: str) -> str:
+    row = session.get(Setting, key)
+    return row.value if row else _SETTING_DEFAULTS[key]
+
+
+@app.get("/api/settings")
+def read_settings(session: Session = Depends(get_session)) -> dict:
+    return {k: get_setting(session, k) for k in _SETTING_DEFAULTS}
+
+
+class SettingsPatch(BaseModel):
+    nav: Decimal | None = None
+    risk_pct: Decimal | None = None
+
+
+@app.patch("/api/settings")
+def patch_settings(body: SettingsPatch, session: Session = Depends(get_session)) -> dict:
+    for key, val in (("nav", body.nav), ("risk_pct", body.risk_pct)):
+        if val is not None:
+            if val <= 0:
+                raise HTTPException(400, f"{key} phải > 0")
+            row = session.get(Setting, key) or Setting(key=key, value="")
+            row.value = str(val)
+            session.add(row)
+    session.commit()
+    return read_settings(session)
 
 
 class PillarPatch(BaseModel):
@@ -138,10 +173,28 @@ def add_trade(thesis_id: int, body: TradeIn,
     if body.quantity <= 0 or body.price <= 0:
         raise HTTPException(400, "Số lượng và giá phải > 0")
 
+    # VAN AN TOÀN SIZE (chỉ lệnh MUA): luật /phan-bo-von — rủi ro ≤ risk_pct NAV,
+    # trần mã theo hạng A/B/C. Vi phạm → chặn 422; force=true mới cho qua và bị
+    # đóng dấu "⚠️ VƯỢT LUẬT SIZE" vào ghi chú (nhật ký kỷ luật không nói dối).
+    note = body.note
+    if body.side == Side.BUY:
+        pnl_now = position_and_pnl(list(th.trades), None)
+        stop = next((lv.price for lv in th.levels if lv.kind == LevelKind.STOP), None)
+        chk = size_check(
+            nav=Decimal(get_setting(session, "nav")),
+            risk_pct=Decimal(get_setting(session, "risk_pct")),
+            conviction=th.conviction, qty=body.quantity, price=body.price,
+            pnl=pnl_now, stop=stop)
+        if not chk["ok"] and not body.force:
+            raise HTTPException(422, detail={"size_check": chk})
+        if not chk["ok"] and body.force:
+            note = ("⚠️ VƯỢT LUẬT SIZE: " + "; ".join(chk["violations"])
+                    + (" | " + note if note else ""))[:500]
+
     # GĐ1: luôn paper. GĐ2 sẽ gọi ssi-sdk place_*_order khi can_place_live_orders.
     trade = Trade(thesis_id=thesis_id, symbol=th.symbol, side=body.side,
                   quantity=body.quantity, price=body.price, fee=body.fee,
-                  mode=TradeMode.PAPER, note=body.note)
+                  mode=TradeMode.PAPER, note=note)
     session.add(trade)
     # mở luận điểm nếu đây là lệnh mua đầu tiên
     if th.state == ThesisState.WATCH and body.side == Side.BUY:
@@ -198,6 +251,50 @@ def stats(session: Session = Depends(get_session)) -> dict:
     theses = session.exec(select(Thesis)).all()
     rows = [(th, market.last_price(th.symbol) if th.trades else None) for th in theses]
     return performance_stats(rows)
+
+
+# ---------- Equity curve + drawdown + benchmark ----------
+
+def take_equity_snapshot(session: Session) -> dict:
+    """Chụp equity hôm nay = NAV + tổng P&L mọi luận điểm (upsert theo ngày)."""
+    from datetime import date as _date
+
+    theses = session.exec(select(Thesis)).all()
+    total = Decimal("0")
+    for th in theses:
+        if th.trades:
+            pnl = position_and_pnl(list(th.trades), market.last_price(th.symbol))
+            total += pnl["total_pnl"]
+    nav = Decimal(get_setting(session, "nav"))
+    equity = nav + total
+    try:
+        vni = market.last_price("VNINDEX")
+    except Exception:  # noqa: BLE001
+        vni = None
+
+    today = _date.today().isoformat()
+    row = session.exec(select(EquitySnapshot)
+                       .where(EquitySnapshot.date == today)).first()
+    if row is None:
+        row = EquitySnapshot(date=today, equity=equity, pnl_total=total, vnindex=vni)
+    else:
+        row.equity, row.pnl_total, row.vnindex = equity, total, vni
+    session.add(row)
+    session.commit()
+    return {"date": today, "equity": str(equity), "pnl_total": str(total),
+            "vnindex": (str(vni) if vni is not None else None)}
+
+
+@app.post("/api/equity/snapshot")
+def equity_snapshot_now(session: Session = Depends(get_session)) -> dict:
+    return take_equity_snapshot(session)
+
+
+@app.get("/api/equity")
+def equity(session: Session = Depends(get_session)) -> dict:
+    snaps = session.exec(select(EquitySnapshot)).all()
+    nav = Decimal(get_setting(session, "nav"))
+    return equity_series(snaps, nav)
 
 
 # ---------- Import luận điểm từ framework markdown ----------

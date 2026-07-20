@@ -53,6 +53,24 @@ Parser đọc đúng format do skill `/theo-doi-luan-diem` sinh: trụ cột �
 vô hiệu hoá + mốc giá (tích luỹ/mua hời/pivot/stop). Không chắc trường nào → bỏ trống,
 không đoán bừa; luôn preview trước khi ghi.
 
+## Van an toàn SIZE (luật /phan-bo-von — bật mặc định)
+Mọi lệnh MUA bị kiểm trước khi nhận (`422` nếu vi phạm):
+1. **Rủi ro/lệnh**: `(giá − stop) × SL ≤ NAV × risk_pct` (mặc định 1,5%) — cần mốc STOP
+   trong luận điểm; không có stop → cảnh báo "chỉ trần tỷ trọng đang bảo vệ bạn".
+2. **Trần mã theo hạng**: giá trị vị thế sau lệnh ≤ NAV × (A 15% / B 8% / C 3%).
+Thông báo chặn kèm **số cp tối đa còn mua được** theo từng luật. Vẫn có thể cố vượt
+(`force=true` — dashboard hỏi confirm) nhưng lệnh bị đóng dấu **"⚠️ VƯỢT LUẬT SIZE"**
+vào ghi chú — nhật ký kỷ luật không nói dối. NAV + risk% chỉnh ở badge NAV trên header
+(`GET/PATCH /api/settings`).
+
+## Equity curve + max drawdown + benchmark
+- Mỗi ngày app tự chụp `EquitySnapshot` (equity = NAV + tổng P&L; kèm VN-Index) —
+  `POST /api/equity/snapshot` để chụp tay.
+- `GET /api/equity`: chuỗi equity + **benchmark VN-Index chuẩn hoá cùng vốn gốc**
+  ("nếu chỉ mua index thì sao?") + drawdown từng ngày + **max drawdown**.
+- Dashboard vẽ SVG 2 đường (xanh: sổ của bạn · xám đứt: index) + tile Max DD +
+  chênh lệch vs index — câu trả lời cho "toàn bộ công sức này có thắng ETF không?".
+
 ## Sổ lệnh, R:R & hiệu suất
 - **R:R trên thẻ luận điểm**: kế hoạch `(target−entry)/(entry−stop)` từ Levels + **R hiện tại**
   của vị thế mở `(giá−giá vốn)/(giá vốn−stop)` — biết đang lời/lỗ bao nhiêu "R" so rủi ro chấp nhận.

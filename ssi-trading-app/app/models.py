@@ -106,3 +106,21 @@ class Trade(SQLModel, table=True):
     note: str = ""
     executed_at: datetime = Field(default_factory=datetime.utcnow)
     thesis: Thesis | None = Relationship(back_populates="trades")
+
+
+class Setting(SQLModel, table=True):
+    """Cấu hình sổ (key-value): nav (tổng vốn), risk_pct_per_trade, cap A/B/C…"""
+    key: str = Field(primary_key=True)
+    value: str
+
+
+class EquitySnapshot(SQLModel, table=True):
+    """Ảnh chụp vốn cuối mỗi ngày — nguyên liệu cho equity curve + max drawdown.
+
+    equity = NAV gốc + tổng P&L (chốt + tạm, đã trừ phí). vnindex để so benchmark.
+    """
+    id: int | None = Field(default=None, primary_key=True)
+    date: str = Field(index=True, unique=True)   # YYYY-MM-DD
+    equity: Decimal = Field(max_digits=20, decimal_places=2)
+    pnl_total: Decimal = Field(max_digits=20, decimal_places=2)
+    vnindex: Decimal | None = Field(default=None, max_digits=12, decimal_places=2)

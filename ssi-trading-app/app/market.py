@@ -14,6 +14,7 @@ from .config import settings
 
 # Giá tham chiếu mồi cho MOCK (đồng) — vài mã đã phân tích trong phiên, số xấp xỉ thực.
 _SEED_PRICES: dict[str, int] = {
+    "VNINDEX": 1787,  # benchmark cho equity curve
     "DBC": 17850, "PVD": 19900, "SSI": 25850, "VHM": 151600, "CTG": 34250,
     "MWG": 78000, "FRT": 117000, "PVS": 38000, "BSR": 21000, "VNM": 61000,
     "FPT": 95000, "HPG": 26000, "VCB": 62000, "MBB": 24000, "VPB": 27800,

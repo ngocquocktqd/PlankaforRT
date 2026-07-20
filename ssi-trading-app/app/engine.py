@@ -203,3 +203,94 @@ def thesis_snapshot(thesis: Thesis, last_price: Decimal | None) -> dict:
         ],
         "n_trades": len(thesis.trades),
     }
+
+
+# ---------- Van an toàn SIZE (luật /phan-bo-von) ----------
+
+# Trần tỷ trọng 1 mã theo hạng luận điểm (A ≤15%, B ≤8%, C ≤3% NAV)
+CONVICTION_CAP = {"A": Decimal("0.15"), "B": Decimal("0.08"), "C": Decimal("0.03")}
+
+
+def size_check(nav: Decimal, risk_pct: Decimal, conviction: str,
+               qty: int, price: Decimal, pnl: dict,
+               stop: Decimal | None) -> dict:
+    """Kiểm lệnh MUA trước khi nhận. Trả {ok, violations[], hints{}}.
+
+    Luật 1 — RỦI RO/LỆNH: (giá − stop) × SL mua ≤ nav × risk_pct.
+      Không có mốc STOP → không tính được rủi ro → cảnh báo riêng (luận điểm giá trị
+      có thể không đặt stop giá, nhưng phải biết mình đang bỏ luật này).
+    Luật 2 — TRẦN MÃ THEO HẠNG: giá trị vị thế SAU lệnh ≤ nav × cap(hạng).
+    """
+    violations: list[str] = []
+    hints: dict = {}
+    price = _d(price)
+    nav = _d(nav)
+
+    # Luật 2 — trần tỷ trọng
+    cap = CONVICTION_CAP.get(conviction.upper(), CONVICTION_CAP["C"])
+    pos_after = pnl["avg_cost"] * pnl["net_qty"] + price * qty
+    cap_value = nav * cap
+    hints["cap_pct"] = str((cap * 100).quantize(Decimal("1")))
+    hints["max_qty_by_cap"] = int((cap_value - pnl["avg_cost"] * pnl["net_qty"]) / price) \
+        if price > 0 else 0
+    if pos_after > cap_value:
+        violations.append(
+            f"Vượt trần hạng {conviction.upper()} ({hints['cap_pct']}% NAV): vị thế sau lệnh "
+            f"{pos_after.quantize(Q)} > {cap_value.quantize(Q)} — tối đa còn mua được "
+            f"~{max(hints['max_qty_by_cap'], 0)} cp")
+
+    # Luật 1 — rủi ro theo stop
+    if stop is not None and price > stop:
+        risk = (price - stop) * qty
+        budget = nav * risk_pct
+        hints["risk_per_share"] = str((price - stop).quantize(Q))
+        hints["max_qty_by_risk"] = int(budget / (price - stop))
+        if risk > budget:
+            violations.append(
+                f"Rủi ro lệnh {risk.quantize(Q)} > ngân sách {budget.quantize(Q)} "
+                f"({(risk_pct*100).quantize(Decimal('0.1'))}% NAV) — với stop này tối đa "
+                f"~{hints['max_qty_by_risk']} cp")
+    elif stop is None:
+        hints["no_stop"] = ("Luận điểm chưa có mốc STOP — không tính được rủi ro/lệnh. "
+                            "Chỉ trần tỷ trọng đang bảo vệ bạn.")
+
+    return {"ok": not violations, "violations": violations, "hints": hints}
+
+
+# ---------- Equity curve + drawdown + benchmark ----------
+
+def equity_series(snapshots: list, nav: Decimal) -> dict:
+    """Chuỗi equity theo ngày + max drawdown + benchmark VN-Index chuẩn hoá.
+
+    drawdown_t = equity_t / max(equity_0..t) − 1. Benchmark chuẩn hoá về NAV gốc
+    tại ngày đầu để hai đường so được với nhau ("nếu chỉ mua index thì sao?").
+    """
+    snaps = sorted(snapshots, key=lambda s: s.date)
+    if not snaps:
+        return {"series": [], "max_drawdown_pct": "0", "vs_index_pct": None}
+
+    peak = _d(snaps[0].equity)
+    max_dd = Decimal("0")
+    base_idx = next((_d(s.vnindex) for s in snaps if s.vnindex), None)
+    series = []
+    for s in snaps:
+        eq = _d(s.equity)
+        peak = max(peak, eq)
+        dd = (eq / peak - 1) * 100 if peak > 0 else Decimal("0")
+        max_dd = min(max_dd, dd)
+        bench = None
+        if base_idx and s.vnindex:
+            bench = (_d(snaps[0].equity) * _d(s.vnindex) / base_idx).quantize(Q)
+        series.append({"date": s.date, "equity": str(eq.quantize(Q)),
+                       "benchmark": (str(bench) if bench is not None else None),
+                       "drawdown_pct": str(dd.quantize(Decimal("0.01")))})
+
+    vs_index = None
+    if base_idx and snaps[-1].vnindex:
+        port_ret = _d(snaps[-1].equity) / _d(snaps[0].equity) - 1
+        idx_ret = _d(snaps[-1].vnindex) / base_idx - 1
+        vs_index = str(((port_ret - idx_ret) * 100).quantize(Decimal("0.01")))
+
+    return {"series": series,
+            "max_drawdown_pct": str(max_dd.quantize(Decimal("0.01"))),
+            "vs_index_pct": vs_index}

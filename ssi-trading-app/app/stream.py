@@ -67,11 +67,27 @@ class Broadcaster:
     async def _loop(self) -> None:
         while True:
             try:
+                await self._daily_snapshot_once()
                 if self.clients:  # không ai xem thì không tick (tiết kiệm)
                     await self._tick()
             except Exception:  # noqa: BLE001 - một tick lỗi không được giết vòng lặp
                 pass
             await asyncio.sleep(TICK_SECONDS)
+
+    _snap_date: str | None = None
+
+    async def _daily_snapshot_once(self) -> None:
+        """Chụp equity 1 lần/ngày (equity curve tự dày lên theo thời gian chạy app)."""
+        from datetime import date as _date
+        today = _date.today().isoformat()
+        if self._snap_date == today:
+            return
+        def _snap() -> None:
+            from .main import take_equity_snapshot
+            with Session(db_engine) as s:
+                take_equity_snapshot(s)
+        await asyncio.to_thread(_snap)
+        self._snap_date = today
 
     async def _tick(self) -> None:
         # đọc DB trong thread để không chặn event loop
